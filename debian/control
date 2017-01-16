@@ -1,0 +1,81 @@
+Source: rmlint
+Section: utils
+Priority: optional
+Maintainer: Carlos Maddela <e7appew@gmail.com>
+Build-Depends: debhelper (>= 10),
+               dh-python,
+               libblkid-dev,
+               libelf-dev,
+               libglib2.0-dev (>= 2.32),
+               libjson-glib-dev,
+               pkg-config (>= 0.15),
+               python3,
+               python3-nose,
+               python3-sphinx,
+               python3-sphinx-bootstrap-theme,
+               scons
+Standards-Version: 3.9.8
+Homepage: https://rmlint.readthedocs.io/
+Vcs-Git: https://anonscm.debian.org/git/collab-maint/rmlint.git
+Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/rmlint.git
+
+Package: rmlint
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Recommends: rmlint-gui (= ${source:Version})
+Description: Extremely fast tool to remove filesystem lint
+ rmlint finds space waste and other broken things on your filesystem
+ and offers to remove them.
+ .
+ It is able to find:
+  * Duplicate files & directories.
+  * Non-stripped binaries.
+  * Broken symlinks.
+  * Empty files.
+  * Recursive empty directories.
+  * Files with broken user or group ID.
+ .
+ Key Features:
+  * Extremely fast.
+  * Flexible and easy command-line options.
+  * Choice of several hashes for hash-based duplicate detection.
+  * Option for exact byte-by-byte comparison (only slightly slower).
+  * Numerous output options.
+  * Option to store time  of last run; next time will only scan new files.
+  * Many options for original selection/prioritisation.
+  * Can handle very large file sets (millions of files).
+  * Colourful progress bar.
+
+Package: rmlint-gui
+Architecture: all
+Multi-Arch: foreign
+Depends: gir1.2-gtksource-3.0,
+         gir1.2-polkit-1.0,
+         gir1.2-rsvg-2.0,
+         python-gi,
+         rmlint (>= ${binary:Version}),
+         ${misc:Depends},
+         ${python3:Depends}
+Recommends: python3-colorlog
+Description: GTK+ frontend to rmlint
+ rmlint-gui (a.k.a. Shredder) is a graphical user interface to rmlint
+ using GTK+. It uses rmlint to find space waste and other broken things
+ on your filesystem and offers to remove them.
+ .
+ It is able to find:
+  * Duplicate files & directories.
+  * Non-stripped binaries.
+  * Broken symlinks.
+  * Empty files.
+  * Recursive empty directories.
+  * Files with broken user or group ID.
+ .
+ Key Features:
+  * Extremely fast.
+  * Flexible and easy command-line options.
+  * Choice of several hashes for hash-based duplicate detection.
+  * Option for exact byte-by-byte comparison (only slightly slower).
+  * Numerous output options.
+  * Option to store time  of last run; next time will only scan new files.
+  * Many options for original selection/prioritisation.
+  * Can handle very large file sets (millions of files).

@@ -1,0 +1,108 @@
+From: Chris P <sahib@online.de>
+Date: Sun, 15 Jan 2017 22:04:06 +0100
+Subject: Cherry-pick unreleased upstream commit.
+
+Description: Cherry-pick unreleased upstream commit.
+ utilities.c: Remove false assertion that triggered in a chroot
+Author: Christopher Pahl <sahib@online.de>
+Origin: upstream, https://github.com/sahib/rmlint/commit/1b3781e886a84d55631e0612b9c883f9759bf281
+Last-Update: 2017-01-16
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+---
+ lib/utilities.c | 76 +++++++++++++++++++++++++++++++--------------------------
+ 1 file changed, 41 insertions(+), 35 deletions(-)
+
+diff --git a/lib/utilities.c b/lib/utilities.c
+index 590202c..163547e 100644
+--- a/lib/utilities.c
++++ b/lib/utilities.c
+@@ -861,47 +861,53 @@ dev_t rm_mounts_get_disk_id(RmMountTable *self, _UNUSED dev_t dev, _UNUSED const
+ #if RM_MOUNTTABLE_IS_USABLE
+ 
+     RmPartitionInfo *part = g_hash_table_lookup(self->part_table, GINT_TO_POINTER(dev));
+-    if(part) {
++    if(part != NULL) {
+         return part->disk;
+-    } else {
+-        /* probably a btrfs subvolume which is not a mountpoint; walk up tree until we get
+-         * to a recognisable partition */
+-        char *prev = g_strdup(path);
+-        while(TRUE) {
+-            char *temp = g_strdup(prev);
+-            char *parent_path = g_strdup(dirname(temp));
+-            g_free(temp);
+-
+-            RmStat stat_buf;
+-            if(!rm_sys_stat(parent_path, &stat_buf)) {
+-                RmPartitionInfo *parent_part = g_hash_table_lookup(
+-                    self->part_table, GINT_TO_POINTER(stat_buf.st_dev));
+-                if(parent_part) {
+-                    /* create new partition table entry for dev pointing to parent_part*/
+-                    rm_log_debug_line("Adding partition info for " GREEN "%s" RESET
+-                                      " - looks like subvolume %s on volume " GREEN
+-                                      "%s" RESET,
+-                                      path, prev, parent_part->name);
+-                    part = rm_part_info_new(prev, parent_part->fsname, parent_part->disk);
+-                    g_hash_table_insert(self->part_table, GINT_TO_POINTER(dev), part);
+-                    /* if parent_part is in the reflinkfs_table, add dev as well */
+-                    char *parent_type = g_hash_table_lookup(
+-                        self->reflinkfs_table, GUINT_TO_POINTER(stat_buf.st_dev));
+-                    if(parent_type) {
+-                        g_hash_table_insert(self->reflinkfs_table, GUINT_TO_POINTER(dev),
+-                                            parent_type);
+-                    }
+-                    g_free(prev);
+-                    g_free(parent_path);
+-                    return parent_part->disk;
++    }
++
++    /* probably a btrfs subvolume which is not a mountpoint;
++     * walk up tree until we get to a recognisable partition
++     * */
++    char *prev = g_strdup(path);
++    while(TRUE) {
++        char *parent_path = g_path_get_dirname(prev);
++        g_printerr("PREV %s %s\n", prev, parent_path);
++
++        RmStat stat_buf;
++        if(!rm_sys_stat(parent_path, &stat_buf)) {
++            RmPartitionInfo *parent_part = g_hash_table_lookup(
++                self->part_table, GINT_TO_POINTER(stat_buf.st_dev));
++            if(parent_part) {
++                /* create new partition table entry for dev pointing to parent_part*/
++                rm_log_debug_line("Adding partition info for " GREEN "%s" RESET
++                                  " - looks like subvolume %s on volume " GREEN
++                                  "%s" RESET,
++                                  path, prev, parent_part->name);
++                part = rm_part_info_new(prev, parent_part->fsname, parent_part->disk);
++                g_hash_table_insert(self->part_table, GINT_TO_POINTER(dev), part);
++                /* if parent_part is in the reflinkfs_table, add dev as well */
++                char *parent_type = g_hash_table_lookup(
++                    self->reflinkfs_table, GUINT_TO_POINTER(stat_buf.st_dev));
++                if(parent_type) {
++                    g_hash_table_insert(self->reflinkfs_table, GUINT_TO_POINTER(dev),
++                                        parent_type);
+                 }
++                g_free(prev);
++                g_free(parent_path);
++                return parent_part->disk;
+             }
++        }
++
++        if(strcmp(prev, "/") == 0) {
+             g_free(prev);
+-            prev = parent_path;
+-            rm_assert_gentle(strcmp(prev, "/") != 0);
+-            rm_assert_gentle(strcmp(prev, ".") != 0);
++            break;
+         }
++
++        g_free(prev);
++        prev = parent_path;
+     }
++
++    return 0;
+ #else
+     (void)dev;
+     (void)path;

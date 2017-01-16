@@ -1,0 +1,25 @@
+From: Carlos Maddela <e7appew@gmail.com>
+Date: Fri, 13 Jan 2017 02:58:01 +1100
+Subject: Add keywords to desktop file.
+
+Description: Add keywords to desktop file.
+Author: Carlos Maddela <e7appew@gmail.com>
+Origin: vendor
+Forwarded: https://github.com/sahib/rmlint/pull/204
+Applied-Upstream: https://github.com/sahib/rmlint/commit/dbe366729da34c570d22501a71978d965ea65bbf
+Last-Update: 2017-01-03
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+---
+ gui/shredder.desktop | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/gui/shredder.desktop b/gui/shredder.desktop
+index a95de06..62f86cc 100644
+--- a/gui/shredder.desktop
++++ b/gui/shredder.desktop
+@@ -7,3 +7,4 @@ TryExec=rmlint
+ Exec=rmlint --gui
+ Icon=shredder
+ Categories=System;
++Keywords=remove;duplicate;files;filesystem;lint;

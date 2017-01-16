@@ -1,0 +1,31 @@
+From: Carlos Maddela <e7appew@gmail.com>
+Date: Sun, 15 Jan 2017 07:42:43 +1100
+Subject: Fix compilation warnings.
+
+Description: Fix compilation warnings.
+Author: Carlos Maddela <e7appew@gmail.com>
+Origin: vendor
+Forwarded: https://github.com/sahib/rmlint/pull/205
+Applied-Upstream: https://github.com/sahib/rmlint/commit/877a66e3f26e795a305cd2bc7d1fc73e231f0954
+Last-Update: 2017-01-15
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+---
+ lib/preprocess.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/lib/preprocess.c b/lib/preprocess.c
+index 7cdde19..0426316 100644
+--- a/lib/preprocess.c
++++ b/lib/preprocess.c
+@@ -336,8 +336,8 @@ char *rm_pp_compile_patterns(RmSession *session, const char *sortcrit, GError **
+                 pattern_count++;
+             } else if(pattern_count != -1) {
+                 g_set_error(error, RM_ERROR_QUARK, 0,
+-                            _("Cannot add more than %ld regex patterns."),
+-                            RM_PATTERN_N_MAX);
++                            _("Cannot add more than %lu regex patterns."),
++                            (unsigned long) RM_PATTERN_N_MAX);
+ 
+                 /* Make sure to set the warning only once */
+                 pattern_count = -1;

@@ -1,0 +1,30 @@
+From: Axel Beckert <abe@deuxchevaux.org>
+Date: Sun, 24 Apr 2016 12:12:53 +0200
+Subject: Also look for nosetests3 (without dash) as common in Debian and
+ Ubuntu
+
+Description: Also look for nosetests3 (without dash) as common in Debian
+ and Ubuntu
+Author: Axel Beckert <abe@deuxchevaux.org>
+Origin: other, https://github.com/xtaran/rmlint/commit/84b50cc419efbf1bfae0a568879792fc0985dbbc
+Forwarded: https://github.com/sahib/rmlint/pull/180
+Last-Update: 2017-01-15
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+---
+ tests/SConscript | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tests/SConscript b/tests/SConscript
+index e8c112e..2d0dcb6 100644
+--- a/tests/SConscript
++++ b/tests/SConscript
+@@ -9,7 +9,7 @@ import subprocess
+ 
+ 
+ def run_tests(target=None, source=None, env=None):
+-    names = ['nosetests-3.3', 'nosetests-3', 'python3-nosetests', 'nosetests']
++    names = ['nosetests-3.3', 'nosetests-3', 'python3-nosetests', 'nosetests3', 'nosetests']
+     for name in names:
+         print('Found nosetests as ,,{}"'.format(name))
+         if not subprocess.call(name + ' -s -v -a !slow', shell=True):

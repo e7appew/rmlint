@@ -1,0 +1,1 @@
+rmlint-gui: desktop-command-not-in-package usr/share/applications/shredder.desktop rmlint

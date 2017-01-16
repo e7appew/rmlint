@@ -1,0 +1,76 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE = 1
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# Automatically disable tests in sbuild and pbuilder.
+ifneq (,$(filter /%nonexistent,$(HOME)))
+export DEB_BUILD_MAINT_OPTIONS += nocheck
+endif
+
+# The following workaround is necessary for hardening, since
+# the project's SConstruct file doesn't make use of CPPFLAGS.
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/buildflags.mk
+export DEB_CFLAGS_MAINT_APPEND = $(CPPFLAGS)
+
+# Ensure that we use the python3 version of sphinx.
+export PATH := /usr/share/sphinx/scripts/python3:$(PATH)
+
+# Prevent sphinx from trying to automatically import themes.
+export http_proxy := http://127.0.0.1:9/
+
+DEB_BUILD_ROOT := $(CURDIR)/debian/tmp
+DBO := $(DEB_BUILD_OPTIONS) $(DEB_BUILD_MAINT_OPTIONS)
+NUM_JOBS := $(lastword $(patsubst parallel=%,%,$(filter parallel=%,$(DBO))))
+COMMON_SCONS_OPTS := \
+	--prefix=$(DEB_BUILD_ROOT)/usr --actual-prefix=/usr --without-gui \
+	$(if $(NUM_JOBS),-j$(NUM_JOBS)) \
+	$(if $(filter $(DH_VERBOSE),1),VERBOSE=1) \
+	$(if $(findstring debug,$(DBO)),DEBUG=1)
+
+# Fudge build date using SOURCE_DATE_EPOCH or last changelog date
+# for build reproducibility.
+DATE := $(if $(filter $(origin SOURCE_DATE_EPOCH),undefined), \
+	$(shell dpkg-parsechangelog -S Date),@$(SOURCE_DATE_EPOCH))
+export BUILD_DATE := $(shell date -u -d '$(DATE)' +'%b %d %Y')
+export BUILD_TIME := $(shell date -u -d '$(DATE)' +%T)
+
+# Sensible defaults for test suite.
+export RM_TS_PRINT_CMD = 0
+export RM_TS_PEDANTIC = 0
+
+%:
+	dh $@ --with python3
+
+override_dh_auto_clean:
+	scons -c $(COMMON_SCONS_OPTS) install
+
+override_dh_auto_configure-arch:
+	scons $(COMMON_SCONS_OPTS) config
+
+override_dh_auto_build-arch:
+	scons $(COMMON_SCONS_OPTS)
+
+override_dh_auto_install-arch:
+	scons $(COMMON_SCONS_OPTS) install
+
+$(patsubst %,override_dh_auto_%-indep,configure build):
+	@echo "*** No-op. ***"
+
+override_dh_auto_install-indep:
+	cd gui && \
+	python3 setup.py install --prefix=$(DEB_BUILD_ROOT)/usr --install-layout=deb
+
+override_dh_install:
+	dh_install -prmlint-gui -X.gz -X.mo
+	dh_install --remaining-packages
+
+override_dh_auto_test:
+ifeq (,$(findstring nocheck,$(DBO)))
+	# Ignore result of the test suite for now
+	-scons $(COMMON_SCONS_OPTS) test
+else
+	@echo "*** Tests disabled via DEB_BUILD(_MAINT)?_OPTIONS. ***"
+endif

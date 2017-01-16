@@ -1,0 +1,97 @@
+From: Carlos Maddela <e7appew@gmail.com>
+Date: Sat, 14 Jan 2017 05:46:33 +1100
+Subject: Make builds reproducible.
+
+Description: Make builds reproducible.
+ * Use environment variables BUILD_DATE and BUILD_TIME, in place
+   of __DATE__ and __TIME__.
+ * Use Debian revision number in place of git revision number.
+Author: Carlos Maddela <e7appew@gmail.com>
+Origin: vendor
+Forwarded: not-needed
+Last-Update: 2017-01-14
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+---
+ SConstruct      | 13 ++++++++++---
+ lib/SConscript  |  4 +++-
+ lib/cmdline.c   |  2 +-
+ lib/config.h.in |  2 ++
+ 4 files changed, 16 insertions(+), 5 deletions(-)
+
+diff --git a/SConstruct b/SConstruct
+index e5469ee..b486c2d 100755
+--- a/SConstruct
++++ b/SConstruct
+@@ -66,13 +66,14 @@ def check_pkg(context, name, varname, required=True):
+ 
+ 
+ def check_git_rev(context):
+-    context.Message('Checking for git revision... ')
++    context.Message('Checking for Debian revision... ')
+     rev = STATIC_GIT_REV
+ 
+     try:
+-        rev = subprocess.check_output('git log --pretty=format:"%h" -n 1', shell=True)
++        rev = subprocess.check_output('dpkg-parsechangelog -S Version', shell=True)
++        rev = rev.split('-', 1)[1]
+     except subprocess.CalledProcessError:
+-        print('Unable to find git revision.')
++        print('Unable to find Debian revision.')
+     except AttributeError:
+         # Patch for some special sandbox permission problems.
+         # See https://github.com/sahib/rmlint/issues/143#issuecomment-139929733
+@@ -630,6 +631,12 @@ if conf.env['HAVE_LIBELF']:
+     conf.env.Append(_LIBFLAGS=['-lelf'])
+ 
+ # Your extra checks here
++
++conf.env['BUILD_DATE'] = os.environ['BUILD_DATE'] \
++    if 'BUILD_DATE' in os.environ else 'UNKNOWN'
++conf.env['BUILD_TIME'] = os.environ['BUILD_TIME'] \
++    if 'BUILD_TIME' in os.environ else 'UNKNOWN'
++
+ env = conf.Finish()
+ 
+ library = SConscript('lib/SConscript')
+diff --git a/lib/SConscript b/lib/SConscript
+index 4298941..c4bd5bf 100644
+--- a/lib/SConscript
++++ b/lib/SConscript
+@@ -39,7 +39,9 @@ def build_config_template(target, source, env):
+             VERSION_MINOR=VERSION_MINOR,
+             VERSION_PATCH=VERSION_PATCH,
+             VERSION_NAME=VERSION_NAME,
+-            VERSION_GIT_REVISION=env['gitrev'].strip()
++            VERSION_GIT_REVISION=env['gitrev'].strip(),
++            BUILD_DATE=env['BUILD_DATE'],
++            BUILD_TIME=env['BUILD_TIME']
+         )
+ 
+         handle.write(config_h)
+diff --git a/lib/cmdline.c b/lib/cmdline.c
+index ba189f2..75d0bf0 100644
+--- a/lib/cmdline.c
++++ b/lib/cmdline.c
+@@ -57,7 +57,7 @@
+ 
+ static void rm_cmd_show_version(void) {
+     fprintf(stderr, "version %s compiled: %s at [%s] \"%s\" (rev %s)\n", RM_VERSION,
+-            __DATE__, __TIME__, RM_VERSION_NAME, RM_VERSION_GIT_REVISION);
++            RM_BUILD_DATE, RM_BUILD_TIME, RM_VERSION_NAME, RM_VERSION_GIT_REVISION);
+ 
+     /* Make a list of all supported features from the macros in config.h */
+     /* clang-format off */
+diff --git a/lib/config.h.in b/lib/config.h.in
+index f9bb987..fb94f19 100644
+--- a/lib/config.h.in
++++ b/lib/config.h.in
+@@ -28,6 +28,8 @@
+ #define RM_VERSION_PATCH {VERSION_PATCH}
+ #define RM_VERSION_NAME  "{VERSION_NAME}"
+ #define RM_VERSION_GIT_REVISION "{VERSION_GIT_REVISION}"
++#define RM_BUILD_DATE "{BUILD_DATE}"
++#define RM_BUILD_TIME "{BUILD_TIME}"
+ 
+ #define RM_MANPAGE_USE_PAGER (1)
+ 

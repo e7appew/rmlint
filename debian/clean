@@ -1,0 +1,13 @@
+config.log
+docs/_build/
+gui/build/
+gui/.files.txt
+gui/shredder/resources/shredder.gresource
+-.o
+.rmlint.json
+rmlint.json
+rmlint.sh
+.scon*
+tests/*.pyc
+tests/__pycache__/
+tests/*/__pycache__/
