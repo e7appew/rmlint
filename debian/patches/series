@@ -1,7 +1,1 @@
-nosetests3.patch
-fix-typos.patch
-add-desktop-file-keywords.patch
 reproducible-build.patch
-fix-compilation-warnings.patch
-cherry-pick-1b3781e8.patch
-cherry-pick-623d3481.patch
