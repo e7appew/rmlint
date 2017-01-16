@@ -1,6 +1,6 @@
-rmlint (2.4.5-1) unstable; urgency=medium
+rmlint (2.4.6-1) unstable; urgency=medium
 
   * Initial upload to Debian. Thanks to Axel Beckert for getting
     it all started. (Closes: #845155)
 
- -- Carlos Maddela <e7appew@gmail.com>  Tue, 17 Jan 2017 02:18:35 +1100
+ -- Carlos Maddela <e7appew@gmail.com>  Tue, 17 Jan 2017 04:45:28 +1100
