@@ -21,6 +21,7 @@ Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/rmlint.git
 
 Package: rmlint
 Architecture: any
+Multi-Arch: allowed
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Recommends: rmlint-gui (= ${source:Version})
 Suggests: rmlint-doc (= ${source:Version})
@@ -54,7 +55,7 @@ Depends: gir1.2-gtksource-3.0,
          gir1.2-polkit-1.0,
          gir1.2-rsvg-2.0,
          python-gi,
-         rmlint (>= ${binary:Version}),
+         rmlint:any (>= ${binary:Version}),
          ${misc:Depends},
          ${python3:Depends}
 Recommends: python3-colorlog
