@@ -12,7 +12,7 @@ Build-Depends: debhelper (>= 10),
                python3,
                python3-nose,
                python3-sphinx,
-               python3-sphinx-bootstrap-theme,
+               python3-sphinx-bootstrap-theme (>= 0.4.3),
                scons
 Standards-Version: 3.9.8
 Homepage: https://rmlint.readthedocs.io/
@@ -23,6 +23,7 @@ Package: rmlint
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Recommends: rmlint-gui (= ${source:Version})
+Suggests: rmlint-doc (= ${source:Version})
 Description: Extremely fast tool to remove filesystem lint
  rmlint finds space waste and other broken things on your filesystem
  and offers to remove them.
@@ -79,3 +80,38 @@ Description: GTK+ frontend to rmlint
   * Option to store time  of last run; next time will only scan new files.
   * Many options for original selection/prioritisation.
   * Can handle very large file sets (millions of files).
+
+Package: rmlint-doc
+Section: doc
+Architecture: all
+Multi-Arch: foreign
+Depends: libjs-bootstrap,
+         libjs-bootswatch,
+         libjs-mathjax,
+         ${misc:Depends},
+         ${sphinxdoc:Depends}
+Built-Using: ${sphinxdoc:Built-Using}
+Description: HTML documentation for rmlint
+ rmlint finds space waste and other broken things on your filesystem
+ and offers to remove them.
+ .
+ It is able to find:
+  * Duplicate files & directories.
+  * Non-stripped binaries.
+  * Broken symlinks.
+  * Empty files.
+  * Recursive empty directories.
+  * Files with broken user or group ID.
+ .
+ Key Features:
+  * Extremely fast.
+  * Flexible and easy command-line options.
+  * Choice of several hashes for hash-based duplicate detection.
+  * Option for exact byte-by-byte comparison (only slightly slower).
+  * Numerous output options.
+  * Option to store time  of last run; next time will only scan new files.
+  * Many options for original selection/prioritisation.
+  * Can handle very large file sets (millions of files).
+  * Colourful progress bar.
+ .
+ This package provides documentation in HTML for rmlint.

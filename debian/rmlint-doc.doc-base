@@ -1,0 +1,10 @@
+Document: rmlint-doc
+Title: rmlint documentation
+Author: Christopher Pahl & Daniel Thomas
+Abstract: This documentation explains the basic principles behind rmlint,
+ as well as its more advanced usage.
+Section: File Management
+
+Format: HTML
+Index: /usr/share/doc/rmlint-doc/html/index.html
+Files: /usr/share/doc/rmlint-doc/html/*

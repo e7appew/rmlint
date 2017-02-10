@@ -42,7 +42,7 @@ export RM_TS_PRINT_CMD = 0
 export RM_TS_PEDANTIC = 0
 
 %:
-	dh $@ --with python3
+	dh $@ --with python3,sphinxdoc
 
 override_dh_auto_clean:
 	scons -c $(COMMON_SCONS_OPTS) install
@@ -56,8 +56,17 @@ override_dh_auto_build-arch:
 override_dh_auto_install-arch:
 	scons $(COMMON_SCONS_OPTS) install
 
-$(patsubst %,override_dh_auto_%-indep,configure build):
+override_dh_auto_configure-indep:
 	@echo "*** No-op. ***"
+
+override_dh_auto_build-indep:
+	scons $(COMMON_SCONS_OPTS) docs
+	rm -rf docs/_build/html/_static/bootstrap-?.?.? docs/_build/html/_static/bootswatch-?.?.?
+	sed -i \
+		-e 's@http[s]\?://cdn.mathjax.org/mathjax/latest/\(MathJax.js\)@file:///usr/share/javascript/mathjax/\1@' \
+		-e 's@\(bootstrap\)-[[:digit:]]\(\.[[:digit:]]\)\{2\}@\1@' \
+		-e 's@\(bootswatch\)-[[:digit:]]\(\.[[:digit:]]\)\{2\}@\1@' \
+		docs/_build/html/*.html
 
 override_dh_auto_install-indep:
 	cd gui && \
@@ -66,6 +75,14 @@ override_dh_auto_install-indep:
 override_dh_install:
 	dh_install -prmlint-gui -X.gz -X.mo
 	dh_install --remaining-packages
+
+override_dh_installdocs:
+	dh_installdocs -prmlint-doc -X.inv
+	dh_installdocs --remaining-packages
+
+override_dh_sphinxdoc:
+	dh_sphinxdoc -prmlint-doc -Xbootstrap -Xbootswatch -Xjquery-
+	dh_sphinxdoc --remaining-packages
 
 override_dh_auto_test:
 ifeq (,$(findstring nocheck,$(DBO)))
