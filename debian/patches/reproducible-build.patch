@@ -7,7 +7,6 @@ Description: Make builds reproducible.
    of __DATE__ and __TIME__.
  * Use Debian revision number in place of git revision number.
 Author: Carlos Maddela <e7appew@gmail.com>
-Origin: vendor
 Forwarded: not-needed
 Last-Update: 2017-01-14
 ---
