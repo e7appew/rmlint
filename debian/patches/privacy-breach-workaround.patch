@@ -1,0 +1,114 @@
+From: Carlos Maddela <e7appew@gmail.com>
+Date: Fri, 10 Feb 2017 16:31:12 +1100
+Subject: Apply workaround for privacy breach issues in HTML documentation.
+
+Description: Apply workaround for privacy breach issues in HTML documentation.
+ The HTML documentation, which is normally generated for online use,
+ requires some modifications to comply with Debian policies when
+ packaged for local use.
+Author: Carlos Maddela <e7appew@gmail.com>
+Forwarded: not-needed
+Last-Update: 2017-02-11
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+---
+ docs/gui.rst   |  2 +-
+ docs/index.rst | 48 +++++-------------------------------------------
+ 2 files changed, 6 insertions(+), 44 deletions(-)
+
+diff --git a/docs/gui.rst b/docs/gui.rst
+index db892ce..19ee69f 100644
+--- a/docs/gui.rst
++++ b/docs/gui.rst
+@@ -8,7 +8,7 @@ dependencies beside ``gtk+`` :math:`\geq 3.14` and ``PyGObject``.
+ .. raw:: html
+ 
+    <center>
+-    <iframe src="https://player.vimeo.com/video/139999878" width="780"
++    <iframe src="<a href='https://player.vimeo.com/video/139999878'>Vimeo video: Shredder - a GUI frontend to rmlint</a>" width="780"
+     height="450"
+     frameborder="0" webkitallowfullscreen mozallowfullscreen
+     allowfullscreen></iframe>
+diff --git a/docs/index.rst b/docs/index.rst
+index cb4ac6f..5af6afc 100644
+--- a/docs/index.rst
++++ b/docs/index.rst
+@@ -41,45 +41,6 @@ to remove it. It is able to find:
+ .. image:: _static/screenshot.png
+    :align: center
+ 
+-----
+-
+-.. .. image:: https://raw.githubusercontent.com/sahib/rmlint/develop/docs/_static/logo.png
+-..    :align: left 
+-..    :width: 150
+-
+-.. raw:: html
+-
+-    <center>
+-
+-.. image:: https://readthedocs.org/projects/rmlint/badge/?version=latest
+-   :target: http://rmlint.rtfd.org
+-   :width: 8%
+-
+-.. image:: https://img.shields.io/travis/sahib/rmlint/develop.svg?style=flat
+-   :target: https://travis-ci.org/sahib/rmlint
+-   :width: 8%
+-
+-.. image:: https://img.shields.io/github/issues/sahib/rmlint.svg?style=flat
+-   :target: https://github.com/sahib/rmlint/issues
+-   :width: 8%
+-
+-.. image:: https://img.shields.io/github/release/sahib/rmlint.svg?style=flat
+-   :target: https://github.com/sahib/rmlint/releases
+-   :width: 8%
+-
+-.. image:: https://badge.waffle.io/sahib/rmlint.svg?label=ready&title=Ready
+-   :target: https://waffle.io/sahib/rmlint
+-   :width: 7%
+-
+-.. image:: http://img.shields.io/badge/license-GPLv3-4AC51C.svg?style=flat
+-   :target: https://www.gnu.org/licenses/quick-guide-gplv3.html.en
+-   :width: 8%
+-
+-
+-.. raw:: html
+-
+-    </center>
+-
+ User manual
+ -----------
+ 
+@@ -103,7 +64,7 @@ Since version ``2.4.0`` we also feature an optional graphical user interface:
+ .. raw:: html
+ 
+    <center>
+-    <iframe src="https://player.vimeo.com/video/139999878" width="780"
++    <iframe srcdoc="<a href='https://player.vimeo.com/video/139999878'>Vimeo video: Shredder - a GUI frontend to rmlint</a>" width="780"
+     height="450"
+     frameborder="0" webkitallowfullscreen mozallowfullscreen
+     allowfullscreen></iframe>
+@@ -172,10 +133,11 @@ Donations
+ If you think rmlint saved [*]_ you some serious time and/or space, you might
+ consider a donation. You can donate either via *Flattr* or via *PayPal*:
+ 
+-.. image:: http://api.flattr.com/button/flattr-badge-large.png
++.. image:: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAF0AAAAUCAYAAADvJjFnAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyNpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChNYWNpbnRvc2gpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjBCNUJBMzg3QjFGRjExRTVCRjE4RDUwMjgzMTMxMTZDIiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjBCNUJBMzg4QjFGRjExRTVCRjE4RDUwMjgzMTMxMTZDIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6MEI1QkEzODVCMUZGMTFFNUJGMThENTAyODMxMzExNkMiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6MEI1QkEzODZCMUZGMTFFNUJGMThENTAyODMxMzExNkMiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz64sPXSAAAFMUlEQVR42uxYe0xbVRj/TntbC6zFFYWtc5rswSOG9A9gU0HHlvAHMjQhMcY0Ib4i+AfiWEQlMSDqYlCRCOpAjZGka7Igf6xuLiFKl4AGmW6sJlCCug3GILZEylPae4/nnPaW1nu7lfUSH+mXnN5zvu87j/6+x/nuRa+cOaRFWNWEkfAkAGyHBG0KIVDNIL/mpPZy9lscYPRGSoq+/sgDn0OSxkCEKKSIMaa/IADPxmqkiXELzOZ+5KxOoB0knvdvW/D+8cLKjgkjhwXh6dr7P4FkTarUOggxG6lBdcubTS26EogHSa3VgJ+DRzlewHekaLZGVRwZGQG73Q6jo6OwuroqkWu1WmhoaIDc3NyIYEJIjJYE2CL5sY/kDJWew37MQJIo+P3Q3t4OAwMDURdRqVRQV1fHAPd6vWAwGKTRIqBN/SPP5L4H10g0nf2t6z8BPMWbw1FcUQRcrVZDRUUFFBcXQ3p6OnR1dUFfXx8DvL6+HgoKCsDtdkNTUxN0dHRIN4nT1d9+6Jws3zraCM7fHbDn9jx6hcS8jyXnddihz4SWH56I4Nfvs8G1hXG27qaCTo7JCQIOpYLwlCIC3tzcDNnZ2Yzf09MjAZwdmPTn5+flLxAFDupZnYah6/YInnvlemhtvIF9dJwejDqTRJ/yPGFrbhZRvAnoUgHN4ZSoh4uAU1peXmaGqK2tDQFOKRrgLAUJ8R90joBx7soJ6doy++zdmgelu6qIN2eReQFjOa4G5r683wbGJBPrv0Mi6OtfO+ESiRbKF+dS/qcjdXDgbgsbD03bYb+pnOmK68QHOjmrXFjSS5MSTSnhVFlZCVarFQoLC2PfhKwfTxN9ORa5aUsmPGtuZZ7/petdFiHUAPu2lzN5PwHNQwxB6cwvnTDpdcHSmpf1WUQRGe27mU5gbZqK+q9amW68/4U2ijfxdKkrilVKRkaGRKbRaDZs2XiJhn7xTksE79sr1og8SffRqfUwPnceTk90wtSCCy7M9MObB05D7p3F8N3UKdZoP414+zeX1+fT/sO7qxjoIl+0Z7ezMWQoZdKLQC5SPrABkikyEEIxXAw46juYUiUjBalsT1UELxw0cR+X5zxrdxmySGrIl8hvNI7Gdy9PK5rTKd7k5QjHBC4ln88n8fTZ2dnABaXTSd5KGfQKoE69t/PHIzImDRuTfahxqvLeZ0+Qkd9ovFG9Wwad4K2it2ksNDg4CBaLBbq7uyP4DoeDPXNycv7xGrhsbzUD/NjA43C070HW/m0UrF6EoFdG+k5q6vpngeHhYWhra2P5KDk5OcQfGxuD3t5e1i8vL5dPL0rUYPgm6wTly2sLbHjwHgtMkYsvMy1fMn8lqFO2uxoukpxP9RjftwA7ScVzn+kRGCcpKhioypxfktNlwsdkMkFjY2MI8JaWFqZcUlLCysiZmRnm4RRwnuehqKgIzGazbK7HCoXnzdah8q9cH0OSRg/mbQdZ+37yFHiCOVmcbyc6tGw8tMvCcJ2cH2P8kz+3wOGs5+Gxe1+CLy68ptjLndw50VPH8/Fnzw2RvL5e9Yqv9OGARyMKeE1NDXAcJ3G/Dy9VwcTUaOKjSxjNT64CBzyOAJwSBdzpdEJra6ss4PTSpDmcppS/e7jSnwH+f994WU5Hc4trHuMWbVqEjH7EstlscayOwouYBAUrFyyol1SIV9tePFEKBPhAWSj8SbxTUAAtHKp7Ew3Av4Zhac4HujXjT+jVYzXps7dd/MCHVkox4g0Jf9wcUmFuMUkwjhw/erboLwEGAEWscT1pVpBeAAAAAElFTkSuQmCC
+    :target: http://flattr.com/thing/302682/libglyr
+    :align: center 
+    :width: 9%
++   :alt: flattr-badge-large.png
+ 
+ .. raw:: html
+ 
+@@ -184,8 +146,8 @@ consider a donation. You can donate either via *Flattr* or via *PayPal*:
+        <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+            <input type="hidden" name="cmd" value="_s-xclick">
+            <input type="hidden" name="hosted_button_id" value="JXCXKRMS8EDVC">
+-           <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+-           <img alt="" border="0" src="https://www.paypalobjects.com/de_DE/i/scr/pixel.gif" width="1" height="1">
++           <input type="image" src="data:image/gif;base64,R0lGODlhSgAVAPcmAP+sLf7iq/7gpf7ksf7en/+6Tf+vM7+LNv+xOu7bskBedhA+a/+0QN+aLo9/WHBuWxA+aoCQl0BfeXB+f2BhUc+TMn+Jg7+YU76zkZ+HVp6jmX+Nj97Qre+iKo6Xk56gke+yT/63R3+LiTBUdO7Tm1BdXs4HAkBfd+7ZrH+Khs+VON7MomB0fkBgeq6ojf7HbGBze765o87Bnp6hlf/s0M7Do/7Rhb62mjBKWxA7YjBUczBUcv64SmB2gp9+Qs7EqP/89jBTcY6Uif+lNEBedN+dNIBwSa6wov/NgtEQBY6Vjb+OO/7amP++Xf+3RlBpev7UjP/Ti6+QVb++r8+hUs6/mf/05P/CYNEOBc6+lN7Knf7epP+oLH+MjJ6fjVBrfmBmXf/05v/ryf61Rv/ZoCBJbv/it3BoTY6WkP/py//YnyBCX/+vOkBVYP+/Wf63S767qP7WjP65Tf/w2f/FZu/gwv/u0++kMVBsgmB1gP7hqmB4h//uzv7dnv/w2HCAhP7Qf66smf+mLf/boP6/WTBMYf7Jcv+uM//y2yBIba6unv/sz//itv+pNP+yP/7mt/+pJv/15//rzv7pvv/syP/dqv/46v/03//OhP/w0/+/Xv+xOAAzZswAAP+ZMwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAACYALAAAAABKABUAAAj/AE0IHGjCk8GDCBMqXMiwocOEBCMONLgoTKSLGC8CAZKxo8ePIEN+tJLGoMSJcyypXMmypcuXMGPKfGnH00lPfi7p3Mmzp8+fQIMKDYrIJkFPYjIpXcq0qdOnUKNKncrHaMFBlLJq3cqVUoSvEaZ0HUuWa52yaClFMeppktu3cONOgsOpbt09cvPqfXsEz96/k6DY9MRjy6PDiBMr9sBJw6MELTj9OBxjgwcOhznESKBhQ4LDnDdoSJBAEacWmH9Y/qy49WEbPAy+MTSgtu3buHtwqlE7EKcuA3SPWLCA9xdOEkYgH4CCuATkaOzOmMFp+AIUuLMP0ENIjsExIWwE/xhPvnx5HZzI3+Ak4gOnPwFWcMoTAP2HABDSyxAhI8CJ9CJwcoN8JwTgnhLmJRjACyGEYJAjDDDwQh8CVGjhhRVyooCFQnDixROcaJHhhpzsMKIAVbCgQBklCqAAJwJ0qEAKLHCSAoYYMuFGhAwYxAYCQDJARxwEFGmkkRhwMkGRJCQCAQlEcFJkFpzAkOSSV5IAQRAuuKAkAVsSYEGVFpSJwZFHAnIFkGwadIgBcMZpQAF01kmnA5w8cIEUhXDiQAEPcJIBCG1wcgGeGRSA6AV5glCCoFRwUkIBjD6gKBgg2EmnE3LKaZAgAIQq6qikUmAXJzkYEeodONSVgw8AmLCqQqyczNoqJ2twskQRdVEAwBl2wUrqsKJyMRgkyCar7LIVHODsActC0mwHyDZbLbTIHtBAB9pC0kC33h5AbbTkIsvWEJukq+667Lbr7rvwxitvuo1Y5UkTmuSr77789uvvvwAHLLAmVgnkCRKYJKzwwgw37PDDEEccccETqVHJxRhnrPHGHHfs8ccck0HxUZ6YIcnJKKNMAw0pt+zyyzDHDDMjJp1E8kM456wzQycFBAA7" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
++           <img alt="" border="0" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" width="1" height="1">
+        </form>
+    </center>
+    <br />
