@@ -1,6 +1,7 @@
 rmlint (2.4.6-1) unstable; urgency=medium
 
   * Initial upload to Debian. Thanks to Axel Beckert for getting
-    it all started. (Closes: #845155)
+    it all started, and to Roger Shimizu for suggested improvements.
+    (Closes: #845155)
 
- -- Carlos Maddela <e7appew@gmail.com>  Tue, 17 Jan 2017 04:45:28 +1100
+ -- Carlos Maddela <e7appew@gmail.com>  Tue, 14 Feb 2017 10:04:33 +1100
