@@ -4,11 +4,6 @@ export DH_VERBOSE = 1
 
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
-# Automatically disable tests in sbuild and pbuilder.
-ifneq (,$(filter /%nonexistent,$(HOME)))
-export DEB_BUILD_MAINT_OPTIONS += nocheck
-endif
-
 # The following workaround is necessary for hardening, since
 # the project's SConstruct file doesn't make use of CPPFLAGS.
 DPKG_EXPORT_BUILDFLAGS = 1
@@ -71,7 +66,6 @@ override_dh_auto_build-indep:
 override_dh_auto_install-indep:
 	cd gui && \
 	python3 setup.py install --prefix=$(DEB_BUILD_ROOT)/usr --install-layout=deb
-
 override_dh_install:
 	dh_install -prmlint-gui -X.gz -X.mo
 	dh_install --remaining-packages
