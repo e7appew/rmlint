@@ -2,8 +2,6 @@ version=4
 
 opts="pagemangle=s%\"tarball_url\"[^\"]+\"[^\"]+/(v\d[\d.]*)\"%<a href=\"https://github.com/sahib/@PACKAGE@/archive/$1.tar.gz\">$1</a>%g, \
       filenamemangle=s%(?:.*?/)?v?(\d[\d.]*)\.tar\.gz%@PACKAGE@-$1.tar.gz%, \
-      compression=xz, \
-      repack, \
       pgpmode=none" \
    https://api.github.com/repos/sahib/@PACKAGE@/tags \
    (?:.*?/)?v?(\d[\d.]*)\.tar\.gz debian uupdate
