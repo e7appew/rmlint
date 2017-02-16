@@ -1,0 +1,26 @@
+From: Carlos Maddela <e7appew@gmail.com>
+Date: Fri, 17 Feb 2017 10:06:50 +1100
+Subject: Fix formatting of unordered list in man page.
+
+Description: Fix formatting of unordered list in man page.
+Author: Carlos Maddela <e7appew@gmail.com>
+Forwarded: https://github.com/sahib/rmlint/pull/209
+Last-Update: 2017-01-17
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+---
+ docs/rmlint.1.rst | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/docs/rmlint.1.rst b/docs/rmlint.1.rst
+index db6fc68..2f598b1 100644
+--- a/docs/rmlint.1.rst
++++ b/docs/rmlint.1.rst
+@@ -19,6 +19,7 @@ DESCRIPTION
+ ``rmlint`` finds space waste and other broken things on your filesystem.
+ 
+ Types of waste include:
++
+ * Duplicate files and directories.
+ * Nonstripped Binaries (Binaries with debug symbols).
+ * Broken links.
