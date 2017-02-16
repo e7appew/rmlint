@@ -1,0 +1,33 @@
+From: Carlos Maddela <e7appew@gmail.com>
+Date: Thu, 16 Feb 2017 23:55:12 +1100
+Subject: Fix FTBFS for hurd-i386.
+
+Description: Fix FTBFS for hurd-i386.
+ Hurd does not have path length restrictions, so doesn't define
+ MAXPATHLEN in <sys/param.h>. Defining it as 4096 when not defined
+ is a sufficient workaround, since the code is able to adapt when
+ paths are actually longer than this value.
+Author: Carlos Maddela <e7appew@gmail.com>
+Forwarded: https://github.com/sahib/rmlint/pull/208
+Last-Update: 2017-02-17
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+---
+ lib/fts/fts.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/lib/fts/fts.c b/lib/fts/fts.c
+index 25de45f..26df8c1 100644
+--- a/lib/fts/fts.c
++++ b/lib/fts/fts.c
+@@ -101,6 +101,10 @@ static int fts_safe_changedir(const FTS *, const FTSENT *, int, const char *);
+ #undef FTS_WHITEOUT
+ #endif
+ 
++#ifndef MAXPATHLEN
++#define MAXPATHLEN 4096
++#endif
++
+ FTS *fts_open(char *const *argv, int options,
+               int (*compar)(const FTSENT **, const FTSENT **)) {
+     FTS *sp;

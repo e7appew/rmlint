@@ -1,3 +1,4 @@
 reproducible-build.patch
 privacy-breach-workaround.patch
 changelog-2.4.6.patch
+fix-hurd-ftbfs.patch
