@@ -8,7 +8,7 @@ Description: Apply workaround for privacy breach issues in HTML documentation.
  packaged for local use.
 Author: Carlos Maddela <e7appew@gmail.com>
 Forwarded: not-needed
-Last-Update: 2017-02-11
+Last-Update: 2017-02-17
 ---
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 ---
@@ -17,7 +17,7 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
  2 files changed, 6 insertions(+), 44 deletions(-)
 
 diff --git a/docs/gui.rst b/docs/gui.rst
-index db892ce..19ee69f 100644
+index db892ce..f6a2260 100644
 --- a/docs/gui.rst
 +++ b/docs/gui.rst
 @@ -8,7 +8,7 @@ dependencies beside ``gtk+`` :math:`\geq 3.14` and ``PyGObject``.
@@ -25,7 +25,7 @@ index db892ce..19ee69f 100644
  
     <center>
 -    <iframe src="https://player.vimeo.com/video/139999878" width="780"
-+    <iframe src="<a href='https://player.vimeo.com/video/139999878'>Vimeo video: Shredder - a GUI frontend to rmlint</a>" width="780"
++    <iframe srcdoc="<a href='https://player.vimeo.com/video/139999878'>Vimeo video: Shredder - a GUI frontend to rmlint</a>" width="780"
      height="450"
      frameborder="0" webkitallowfullscreen mozallowfullscreen
      allowfullscreen></iframe>
