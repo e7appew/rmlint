@@ -37,6 +37,10 @@ export BUILD_TIME := $(shell date -u -d '$(DATE)' +%T)
 export RM_TS_PRINT_CMD = 0
 export RM_TS_PEDANTIC = 0
 
+# Set locale so that python3 nose tests run with UTF-8 support
+# in all build environments.
+export LC_ALL = C.UTF-8
+
 %:
 	dh $@ --with python3,sphinxdoc
 
