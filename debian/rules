@@ -63,14 +63,14 @@ override_dh_auto_build-indep:
 	scons $(COMMON_SCONS_OPTS) docs
 	rm -rf docs/_build/html/_static/bootstrap-?.?.? docs/_build/html/_static/bootswatch-?.?.?
 	sed -i \
-		-e 's@http[s]\?://cdn.mathjax.org/mathjax/latest/\(MathJax.js\)@file:///usr/share/javascript/mathjax/\1@' \
-		-e 's@\(bootstrap\)-[[:digit:]]\(\.[[:digit:]]\)\{2\}@\1@' \
-		-e 's@\(bootswatch\)-[[:digit:]]\(\.[[:digit:]]\)\{2\}@\1@' \
+		-e 's@http[s]\?://cdn.mathjax.org/mathjax/latest/\(MathJax.js\)@file:///usr/share/javascript/mathjax/\1@g' \
+		-e 's@\(bootstrap\|bootswatch\)-[[:digit:]]\(\.[[:digit:]]\)\{2\}@\1@g' \
 		docs/_build/html/*.html
 
 override_dh_auto_install-indep:
 	cd gui && \
 	python3 setup.py install --prefix=$(DEB_BUILD_ROOT)/usr --install-layout=deb
+
 override_dh_install:
 	dh_install -prmlint-gui -X.compiled -X.gz -X.mo
 	dh_install --remaining-packages
