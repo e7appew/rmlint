@@ -1,33 +1,43 @@
 From: Carlos Maddela <e7appew@gmail.com>
-Date: Thu, 16 Feb 2017 23:55:12 +1100
-Subject: Fix FTBFS for hurd-i386.
+Date: Tue, 21 Feb 2017 14:12:26 +1100
+Subject: Cherry-pick upstream fix for hurd-i386 FTBFS.
 
-Description: Fix FTBFS for hurd-i386.
- Hurd does not have path length restrictions, so doesn't define
- MAXPATHLEN in <sys/param.h>. Defining it as 4096 when not defined
- is a sufficient workaround, since the code is able to adapt when
- paths are actually longer than this value.
-Author: Carlos Maddela <e7appew@gmail.com>
-Forwarded: https://github.com/sahib/rmlint/pull/208
-Last-Update: 2017-02-17
+Description: Cherry-pick upstream fix for hurd-i386 FTBFS.
+ hurd-i386: Fix undefined MAXPATHLEN (supply PATH_MAX)
+Author: Chris Pahl <sahib@online.de>
+Origin: upstream, https://github.com/sahib/rmlint/commit/c81f2fc98e9458aca855dccead39d0fe6cbd3bb1
+Forwarded: not-needed
+Last-Update: 2017-02-19
 ---
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 ---
- lib/fts/fts.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ lib/fts/fts.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/lib/fts/fts.c b/lib/fts/fts.c
-index 25de45f..26df8c1 100644
+index 25de45f..48ba752 100644
 --- a/lib/fts/fts.c
 +++ b/lib/fts/fts.c
-@@ -101,6 +101,10 @@ static int fts_safe_changedir(const FTS *, const FTSENT *, int, const char *);
- #undef FTS_WHITEOUT
- #endif
+@@ -51,6 +51,13 @@ __RCSID("$NetBSD: fts.c,v 1.48 2015/01/29 15:55:21 manu Exp $");
  
-+#ifndef MAXPATHLEN
-+#define MAXPATHLEN 4096
+ #include "fts.h"
+ 
++#include "../config.h"
++
++#ifndef  FTS_PATH_MAX
++# define FTS_PATH_MAX PATH_MAX
 +#endif
 +
- FTS *fts_open(char *const *argv, int options,
-               int (*compar)(const FTSENT **, const FTSENT **)) {
-     FTS *sp;
++
+ static FTSENT *fts_alloc(FTS *, const char *, size_t);
+ static FTSENT *fts_build(FTS *, int);
+ static void fts_free(FTSENT *);
+@@ -132,7 +139,7 @@ FTS *fts_open(char *const *argv, int options,
+      * Start out with 1K of path space, and enough, in any case,
+      * to hold the user's paths.
+      */
+-    if(fts_palloc(sp, MAX(fts_maxarglen(argv), MAXPATHLEN)))
++    if(fts_palloc(sp, MAX(fts_maxarglen(argv), FTS_PATH_MAX)))
+         goto mem1;
+ 
+     /* Allocate/initialize root's parent. */
