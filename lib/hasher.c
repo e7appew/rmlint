@@ -16,16 +16,16 @@
  *
  * Authors:
  *
- *  - Christopher <sahib> Pahl 2010-2015 (https://github.com/sahib)
- *  - Daniel <SeeSpotRun> T.   2014-2015 (https://github.com/SeeSpotRun)
+ *  - Christopher <sahib> Pahl 2010-2017 (https://github.com/sahib)
+ *  - Daniel <SeeSpotRun> T.   2014-2017 (https://github.com/SeeSpotRun)
  *
  * Hosted on http://github.com/sahib/rmlint
  *
  */
 
+#include <glib.h>
 #include <stdio.h>
 #include <string.h>
-#include <glib.h>
 
 #include <fcntl.h>
 
@@ -444,7 +444,8 @@ RmHasherTask *rm_hasher_task_new(RmHasher *hasher, RmDigest *digest,
 }
 
 gboolean rm_hasher_task_hash(RmHasherTask *task, char *path, guint64 start_offset,
-                             guint64 bytes_to_read, gboolean is_symlink) {
+                             guint64 bytes_to_read, gboolean is_symlink,
+                             RmOff *bytes_read_out) {
     guint64 bytes_read = 0;
     if(is_symlink) {
         bytes_read = rm_hasher_symlink_read(task->hasher, task->digest, path);
@@ -454,6 +455,10 @@ gboolean rm_hasher_task_hash(RmHasherTask *task, char *path, guint64 start_offse
     } else {
         bytes_read = rm_hasher_unbuffered_read(task->hasher, task->hashpipe, task->digest,
                                                path, start_offset, bytes_to_read);
+    }
+
+    if(bytes_read_out != NULL) {
+        *bytes_read_out = bytes_to_read;
     }
 
     return ((is_symlink && bytes_read == 0) || bytes_read == bytes_to_read);

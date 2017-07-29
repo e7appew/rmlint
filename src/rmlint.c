@@ -16,16 +16,16 @@
 *
 ** Authors:
  *
- *  - Christopher <sahib> Pahl 2010-2014 (https://github.com/sahib)
- *  - Daniel <SeeSpotRun> T.   2014-2014 (https://github.com/SeeSpotRun)
+ *  - Christopher <sahib> Pahl 2010-2017 (https://github.com/sahib)
+ *  - Daniel <SeeSpotRun> T.   2014-2017 (https://github.com/SeeSpotRun)
  *
 ** Hosted on http://github.com/sahib/rmlint
 *
 **/
 
+#include <locale.h>
 #include <stdlib.h>
 #include <string.h>
-#include <locale.h>
 
 #include "../lib/api.h"
 #include "../lib/config.h"
@@ -72,7 +72,7 @@ static void signal_handler(int signum) {
     case SIGABRT:
     case SIGSEGV:
         /* logging messages might have unexpected effects in a signal handler,
-         * but that's probably the least thing we have to worry about in case of 
+         * but that's probably the least thing we have to worry about in case of
          * a segmentation fault.
          */
         rm_log_error_line(_("Aborting due to a fatal error. (signal received: %s)"),

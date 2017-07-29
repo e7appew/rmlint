@@ -16,17 +16,17 @@
  *
  * Authors:
  *
- *  - Christopher <sahib> Pahl 2010-2015 (https://github.com/sahib)
- *  - Daniel <SeeSpotRun> T.   2014-2015 (https://github.com/SeeSpotRun)
+ *  - Christopher <sahib> Pahl 2010-2017 (https://github.com/sahib)
+ *  - Daniel <SeeSpotRun> T.   2014-2017 (https://github.com/SeeSpotRun)
  *
  * Hosted on http://github.com/sahib/rmlint
  *
  */
 
-#include "../formats.h"
-#include "../utilities.h"
-#include "../preprocess.h"
 #include "../checksums/spooky-c.h"
+#include "../formats.h"
+#include "../preprocess.h"
+#include "../utilities.h"
 
 #include <glib.h>
 #include <stdio.h>
@@ -51,7 +51,7 @@ static guint32 rm_fmt_json_generate_id(RmFmtHandlerJSON *self, RmFile *file,
                                        const char *file_path, char *cksum) {
     guint32 hash = 0;
     hash = file->inode ^ file->dev;
-    hash ^= file->file_size;
+    hash ^= file->actual_file_size;
 
     for(int i = 0; i < 8192; ++i) {
         hash ^= spooky_hash32(file_path, strlen(file_path), i);
@@ -166,7 +166,7 @@ static void rm_fmt_json_close(RmFmtHandlerJSON *self, FILE *out) {
 }
 
 static void rm_fmt_json_sep(RmFmtHandlerJSON *self, FILE *out) {
-    fprintf(out, ", %s", self->pretty ? "\n  " : "");
+    fprintf(out, ",%s", self->pretty ? "\n  " : "");
 }
 
 /////////////////////////
@@ -257,10 +257,10 @@ static void rm_fmt_elem(RmSession *session, _UNUSED RmFmtHandler *parent, FILE *
     if(rm_fmt_get_config_value(session->formats, "json", "no_body")) {
         return;
     }
-    if (file->lint_type == RM_LINT_TYPE_UNIQUE_FILE && (!file->digest || !session->cfg->write_unfinished)) {
+    if(file->lint_type == RM_LINT_TYPE_UNIQUE_FILE &&
+       (!file->digest || !session->cfg->write_unfinished)) {
         /* unique file with no partial checksum */
         return;
-         /* TODO: add option to output all unique files */
     }
 
     char checksum_str[rm_digest_get_bytes(file->digest) * 2 + 1];
@@ -275,16 +275,18 @@ static void rm_fmt_elem(RmSession *session, _UNUSED RmFmtHandler *parent, FILE *
 
         rm_fmt_json_key_int(out, "id",
                             rm_fmt_json_generate_id(self, file, file_path, checksum_str));
-
         rm_fmt_json_sep(self, out);
         rm_fmt_json_key(out, "type", rm_file_lint_type_to_string(file->lint_type));
         rm_fmt_json_sep(self, out);
-        rm_fmt_json_key_int(
-            out, "progress",
-            CLAMP(100 -
+
+        gdouble progress = 0;
+        if(session->shred_bytes_after_preprocess) {
+            progress = CLAMP(100 -
                       100 * ((gdouble)session->shred_bytes_remaining /
                              (gdouble)session->shred_bytes_after_preprocess),
-                  0, 100));
+                      0, 100);
+        }
+        rm_fmt_json_key_int(out, "progress", progress);
         rm_fmt_json_sep(self, out);
 
         if(file->digest) {
@@ -295,7 +297,7 @@ static void rm_fmt_elem(RmSession *session, _UNUSED RmFmtHandler *parent, FILE *
         rm_fmt_json_key_unsafe(out, "path", file_path);
         rm_fmt_json_sep(self, out);
         if(file->lint_type != RM_LINT_TYPE_UNIQUE_FILE) {
-            rm_fmt_json_key_int(out, "size", file->file_size);
+            rm_fmt_json_key_int(out, "size", file->actual_file_size);
             rm_fmt_json_sep(self, out);
             if(file->twin_count >= 0) {
                 rm_fmt_json_key_int(out, "twins", file->twin_count);
@@ -311,7 +313,7 @@ static void rm_fmt_elem(RmSession *session, _UNUSED RmFmtHandler *parent, FILE *
             rm_fmt_json_sep(self, out);
 
             if(session->cfg->find_hardlinked_dupes) {
-                RmFile *hardlink_head = file->hardlinks.hardlink_head;
+                RmFile *hardlink_head = RM_FILE_HARDLINK_HEAD(file);
 
                 if(hardlink_head && hardlink_head != file) {
                     char orig_checksum_str[rm_digest_get_bytes(file->digest) * 2 + 1];

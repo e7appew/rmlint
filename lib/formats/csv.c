@@ -16,8 +16,8 @@
  *
  * Authors:
  *
- *  - Christopher <sahib> Pahl 2010-2015 (https://github.com/sahib)
- *  - Daniel <SeeSpotRun> T.   2014-2015 (https://github.com/SeeSpotRun)
+ *  - Christopher <sahib> Pahl 2010-2017 (https://github.com/sahib)
+ *  - Daniel <SeeSpotRun> T.   2014-2017 (https://github.com/SeeSpotRun)
  *
  * Hosted on http://github.com/sahib/rmlint
  *
@@ -40,7 +40,8 @@ typedef struct RmFmtHandlerCSV {
     RmFmtHandler parent;
 } RmFmtHandlerProgress;
 
-static void rm_fmt_head(_UNUSED RmSession *session, _UNUSED RmFmtHandler *parent, FILE *out) {
+static void rm_fmt_head(_UNUSED RmSession *session, _UNUSED RmFmtHandler *parent,
+                        FILE *out) {
     if(rm_fmt_get_config_value(session->formats, "csv", "no_header")) {
         return;
     }
@@ -49,13 +50,14 @@ static void rm_fmt_head(_UNUSED RmSession *session, _UNUSED RmFmtHandler *parent
             "checksum");
 }
 
-static void rm_fmt_elem(_UNUSED RmSession *session, _UNUSED RmFmtHandler *parent, FILE *out,
-                        RmFile *file) {
-    if (file->lint_type == RM_LINT_TYPE_UNIQUE_FILE && (!file->digest || !session->cfg->write_unfinished)) {
+static void rm_fmt_elem(_UNUSED RmSession *session, _UNUSED RmFmtHandler *parent,
+                        FILE *out, RmFile *file) {
+    if(file->lint_type == RM_LINT_TYPE_UNIQUE_FILE &&
+       (!file->digest || !session->cfg->write_unfinished)) {
         /* unique file with no partial checksum */
         return;
-         /* TODO: add option to output all unique files */
     }
+
     char checksum_str[rm_digest_get_bytes(file->digest) * 2 + 1];
     memset(checksum_str, '0', sizeof(checksum_str));
     checksum_str[sizeof(checksum_str) - 1] = 0;
@@ -69,7 +71,7 @@ static void rm_fmt_elem(_UNUSED RmSession *session, _UNUSED RmFmtHandler *parent
     char *clean_path = rm_util_strsub(file_path, CSV_QUOTE, CSV_QUOTE "" CSV_QUOTE);
 
     fprintf(out, CSV_FORMAT, rm_file_lint_type_to_string(file->lint_type), clean_path,
-            file->file_size, checksum_str);
+            file->actual_file_size, checksum_str);
 
     g_free(clean_path);
 }

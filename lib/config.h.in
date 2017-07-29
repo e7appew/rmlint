@@ -20,8 +20,9 @@
 #define HAVE_BTRFS_H       ({HAVE_BTRFS_H})
 #define HAVE_FACCESSAT     ({HAVE_FACCESSAT})
 #define HAVE_UNAME         ({HAVE_UNAME})
+#define HAVE_SYSMACROS_H    ({HAVE_SYSMACROS_H})
 
-#define RM_DEFAULT_DIGEST RM_DIGEST_SHA1
+#define RM_DEFAULT_DIGEST RM_DIGEST_BLAKE2B
 #define RM_VERSION "{VERSION_MAJOR}.{VERSION_MINOR}.{VERSION_PATCH}"
 #define RM_VERSION_MAJOR {VERSION_MAJOR}
 #define RM_VERSION_MINOR {VERSION_MINOR}
@@ -66,7 +67,7 @@
 
 #define rm_log_perror(message)                                                           \
     if(errno) {{                                                                         \
-        rm_log_error("%s:%d: %s: %s\n", __FILE__, __LINE__, message, g_strerror(errno)); \
+        rm_log_error_line("%s:%d: %s: %s", __FILE__, __LINE__, message, g_strerror(errno)); \
     }}                                                                                   \
 
 #define _UNUSED G_GNUC_UNUSED

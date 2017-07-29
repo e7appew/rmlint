@@ -16,8 +16,8 @@
  *
  * Authors:
  *
- *  - Christopher <sahib> Pahl 2010-2015 (https://github.com/sahib)
- *  - Daniel <SeeSpotRun> T.   2014-2015 (https://github.com/SeeSpotRun)
+ *  - Christopher <sahib> Pahl 2010-2017 (https://github.com/sahib)
+ *  - Daniel <SeeSpotRun> T.   2014-2017 (https://github.com/SeeSpotRun)
  *
  * Hosted on http://github.com/sahib/rmlint
  *
@@ -26,9 +26,9 @@
 #include "../formats.h"
 
 #include <glib.h>
+#include <search.h>
 #include <stdio.h>
 #include <string.h>
-#include <search.h>
 
 #include <sys/ioctl.h>
 
@@ -101,6 +101,12 @@ static void rm_fmt_prog(RmSession *session,
 
         fprintf(out, _("other suspicious item(s) found, which may vary in size.\n"));
     }
+
+    gfloat elapsed = g_timer_elapsed(session->timer_since_proc_start, NULL);
+    char *elapsed_time = rm_format_elapsed_time(elapsed, 3);
+    ARROW fprintf(out, _("Scanning took in total %s%s%s. Is that good enough?\n"),
+                  MAYBE_RED(out, session), elapsed_time, MAYBE_RESET(out, session));
+    g_free(elapsed_time);
 
     bool first_print_flag = true;
     GHashTableIter iter;

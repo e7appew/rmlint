@@ -16,8 +16,8 @@
  *
  * Authors:
  *
- *  - Christopher <sahib> Pahl 2010-2015 (https://github.com/sahib)
- *  - Daniel <SeeSpotRun> T.   2014-2015 (https://github.com/SeeSpotRun)
+ *  - Christopher <sahib> Pahl 2010-2017 (https://github.com/sahib)
+ *  - Daniel <SeeSpotRun> T.   2014-2017 (https://github.com/SeeSpotRun)
  *
  * Hosted on http://github.com/sahib/rmlint
  *
@@ -36,7 +36,6 @@ typedef enum RmShredGroupStatus {
     RM_SHRED_GROUP_FINISHING,
     RM_SHRED_GROUP_FINISHED
 } RmShredGroupStatus;
-
 
 /**
  * @brief Find duplicate RmFile and pass them to postprocess; free/destroy all other
@@ -63,7 +62,8 @@ void rm_shred_forward_to_output(RmSession *session, GQueue *group);
 /**
  * @brief Find the original file in a group and mark it.
  */
-void rm_shred_group_find_original(RmSession *session, GQueue *group, RmShredGroupStatus status);
+void rm_shred_group_find_original(RmSession *session, GQueue *group,
+                                  RmShredGroupStatus status);
 
 /**
  * @brief post-processing sorting of files by criteria (-S and -[kmKM])

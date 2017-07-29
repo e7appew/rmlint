@@ -19,6 +19,7 @@ DESCRIPTION
 ``rmlint`` finds space waste and other broken things on your filesystem.
 
 Types of waste include:
+
 * Duplicate files and directories.
 * Nonstripped Binaries (Binaries with debug symbols).
 * Broken links.
@@ -109,17 +110,17 @@ General Options
 
     By default this check is not done.
 
-:``-a --algorithm=name`` (**default\:** *sha1*):
+:``-a --algorithm=name`` (**default\:** *blake2b*):
 
-    Choose the algorithm to use for finding duplicate files.  The algorithm can be
+    Choose the algorithm to use for finding duplicate files. The algorithm can be
     either **paranoid** (byte-by-byte file comparison) or use one of several file hash
     algorithms to identify duplicates.  The following well-known algorithms are available:
 
     **spooky**, **city**, **murmur**, **xxhash**, **md5**, **sha1**, **sha256**,
-    **sha512**, **farmhash**.
+    **sha512**, **farmhash**, **sha3**, **sha3-256**, **sha3-384**, **sha3-512**,
+    **blake2s**, **blake2b**, **blake2sp**, **blake2bp**.
 
-    The above are all 128 bit except sha1 (160 bit), sha256 and sha512.  There are also
-    some compound variations of the above functions:
+    There are also some compound variations of the above functions:
 
     * **bastard:** 256bit, combining **city**, and **murmur**.
     * **city256, city512, murmur256, murmur512:** Use multiple 128-bit hashes with different seeds.
@@ -128,6 +129,7 @@ General Options
 :``-p --paranoid`` / ``-P --less-paranoid`` (**default**):
 
     Increase or decrease the paranoia of ``rmlint``'s duplicate algorithm.
+    Use ``-pp`` if you want byte-by-byte comparison without any hashing.
 
     * **-p** is equivalent to **--algorithm=sha512**
     * **-pp** is equivalent to **--algorithm=paranoid**
@@ -156,8 +158,17 @@ General Options
     always should make sure that the investigated directory is not modified
     during ``rmlint``'s or its removal scripts run.
 
-    Output is deferred until all duplicates were found.
-    Duplicate directories are printed first, followed by any remaining duplicate files.
+    IMPORTANT: Definition of equal: Two directories are considered equal by
+    ``rmlint`` if they contain the exact same data, no matter how are the files
+    contaning the data are named. Imagine that ``rmlint`` creates a long,
+    sorted stream out of the data found in the directory and compares this in
+    a magic way. This means that the layout of the directory is not considered
+    to be important by ``rmlint``. This might be surprising to some users, but
+    remember that ``rmlint`` generally cares only about content, not about any
+    other metadata or layout.
+
+    Output is deferred until all duplicates were found. Duplicate directories
+    are printed first, followed by any remaining duplicate files.
 
     **--rank-by** applies for directories too, but 'p' or 'P' (path index)
     has no defined (i.e. useful) meaning. Sorting takes only place when the number of
@@ -168,8 +179,18 @@ General Options
     * This option enables ``--partial-hidden`` and ``-@`` (``--see-symlinks``)
       for convenience. If this is not desired, you should change this after
       specifying ``-D``.
-    * This feature might not deliver perfect result in corner cases.
-    * This feature might add some runtime.
+    * This feature might not deliver perfect result in corner cases, but
+      should never report false positives.
+    * This feature might add some runtime for large datasets.
+    * When using this option, you will not be able to use the ``-c sh:clone`` option.
+      Use ``-c sh:link`` as a good alternative.
+
+:``-j --honour-dir-layout`` (**default\:** *disabled*):
+
+    Only recognize directories as duplicates that have the same path layout. In
+    other words: All duplicates that build the duplicate directory must have
+    the same path from the root of the directory.
+    This flag has no effect without ``--merge-directories``.
 
 :``-y --sort-by=order`` (**default\:** *none*):
 
@@ -195,14 +216,30 @@ General Options
     See also: http://rmlint.readthedocs.org/en/latest/gui.html
 
     The gui has its own set of options, see ``--gui --help`` for a list.  These
-    should be placed at the end, ie ``rmlint --gui [options]``
+    should be placed at the end, ie ``rmlint --gui [options]`` when calling
+    it from commandline.
 
-:``--hash``:
+:``--hash [paths...]``:
 
     Make ``rmlint`` work as a multi-threaded file hash utility, similar to the
-    popular ``md5sum`` or ``sha1sum`` utilities, but faster.
+    popular ``md5sum`` or ``sha1sum`` utilities, but faster and with more algorithms.
     A set of paths given on the commandline or from *stdin* is hashed using one
     of the available hash algorithms.  Use ``rmlint --hash -h`` to see options.
+
+:``--equal [paths...]``:
+
+    Check if the paths given on the commandline all have equal content. If all
+    paths are equal and no other error happened, rmlint will exit with an exit
+    code 0. Otherwise it will exit with a nonzero exit code. All other options
+    can be used as normal, but note that no other formatters (``sh``, ``csv``
+    etc.) will be executed by default. At least two paths need to be passed.
+
+    Note: This even works for directories and also in combination with paranoid
+    mode (pass ``-pp`` for byte comparison); remember that rmlint does not care
+    about the layout of the directory, but only about the content of the files
+    in it. At least two paths need to be given to the commandline.
+
+    By default this will use hashing to compare the files and/or directories.
 
 :``-w --with-color`` (**default**) / ``-W --no-with-color``:
 
@@ -221,20 +258,28 @@ General Options
 Traversal Options
 -----------------
 
-:``-s --size=range`` (**default\:** *all*):
+:``-s --size=range`` (**default\:** "1"):
 
-    Only consider files in a certain size range.
+    Only consider files as duplicates in a certain size range.
     The format of `range` is `min-max`, where both ends can be specified
     as a number with an optional multiplier. The available multipliers are:
 
     - *C* (1^1), *W* (2^1), B (512^1), *K* (1000^1), KB (1024^1), *M* (1000^2), *MB* (1024^2), *G* (1000^3), *GB* (1024^3),
     - *T* (1000^4), *TB* (1024^4), *P* (1000^5), *PB* (1024^5), *E* (1000^6), *EB* (1024^6)
 
-    The size format is about the same as `dd(1)` uses. Example: **"100KB-2M"**.
+    The size format is about the same as `dd(1)` uses. A valid example would be: **"100KB-2M"**.
+    This limits duplicates to a range from 100 Kilobyte to 2 Megabyte.
 
     It's also possible to specify only one size. In this case the size is
-    interpreted as *"bigger than this size"*. If you want to to filter for files
-    *up to this size* you can add a ``-`` in front (``-s -1M``).
+    interpreted as *"bigger or equal"*. If you want to to filter for files
+    *up to this size* you can add a ``-`` in front (``-s -1M`` == ``-s 0-1M``).
+
+    **NOTE:** The default excludes empty files from the duplicate search.
+    Normally these are treated specially by ``rmlint`` by handling them as
+    *other lint*. If you want to include empty files as duplicates you should
+    lower the limit to zero:
+
+    ``$ rmlint -T df --size 0``
 
 :``-d --max-depth=depth`` (**default\:** *INF*):
 
@@ -247,7 +292,7 @@ Traversal Options
 
 :``-f --followlinks`` / ``-F --no-followlinks`` / ``-@ --see-symlinks`` (**default**):
 
-    ``-f`` will always follow symbolic links. If file system loops occur
+    ``-f`` will always follow symbolic links. If file system loops occurs
     ``rmlint`` will detect this. If `-F` is specified, symbolic links will be
     ignored completely, if ``-@`` is specified, ``rmlint`` will see symlinks and
     treats them like small files with the path to their target in them. The
@@ -256,8 +301,8 @@ Traversal Options
 
 :``-x --no-crossdev`` / ``-X --crossdev`` (**default**):
 
-    Stay always on the same device (``-x``),
-    or allow crossing mountpoints (``-X``)?
+    Stay always on the same device (``-x``), or allow crossing mountpoints
+    (``-X``). The latter is the default.
 
 :``-r --hidden`` / ``-R --no-hidden`` (**default**) / ``--partial-hidden``:
 
@@ -280,14 +325,13 @@ Traversal Options
 
     Only consider those files as dupes that have the same file extension. For
     example two photos would only match if they are a ``.png``. The extension is
-    compared case insensitive, so ``.PNG`` is the same as ``.png``.
+    compared case-insensitive, so ``.PNG`` is the same as ``.png``.
 
 :``-i --match-without-extension`` / ``-I --no-match-without-extension`` (**default**):
 
     Only consider those files as dupes that have the same basename minus the file
     extension. For example: ``banana.png`` and ``banana.jpeg`` would be considered,
-    while ``apple.png`` and ``peach.png`` won't. The comparison is also
-    case-insensitive.
+    while ``apple.png`` and ``peach.png`` won't. The comparison is case-insensitive.
 
 :``-n --newer-than-stamp=<timestamp_filename>`` / ``-N --newer-than=<iso8601_timestamp_or_unix_timestamp>``:
 
@@ -301,11 +345,12 @@ Traversal Options
     If the file does not initially exist, no filtering is done but the stampfile
     is still written.
 
-    ``-N`` in contrast takes the timestamp directly and will not write anything.
+    ``-N``, in contrast, takes the timestamp directly and will not write anything.
 
-    Note that ``rmlint`` will find duplicates newer than ``timestamp``, even if the original is
-    older.  If you want only find duplicates where both original and duplicate are newer
-    than ``timestamp`` you can use ``find(1)``:
+    Note that ``rmlint`` will find duplicates newer than ``timestamp``, even if
+    the original is older.  If you want only find duplicates where both
+    original and duplicate are newer than ``timestamp`` you can use
+    ``find(1)``:
 
     * ``find -mtime -1 | rmlint - # find all files younger than a day``
 
@@ -332,9 +377,10 @@ Original Detection Options
 
     Sort the files in a group of duplicates into originals and duplicates by
     one or more criteria. Each criteria is defined by a single letter (except
-    **r** and **x**). Multiple criteria may be given as string, where the
-    first criteria is the most important. If one criteria cannot decide between
-    original and duplicate the next one is tried.
+    **r** and **x** which expect a regex pattern after the letter). Multiple
+    criteria may be given as string, where the first criteria is the most
+    important. If one criteria cannot decide between original and duplicate the
+    next one is tried.
 
     - **m**: keep lowest mtime (oldest)           **M**: keep highest mtime (newest)
     - **a**: keep first alphabetically            **A**: keep last alphabetically
@@ -426,17 +472,8 @@ Caching
     Read or write cached checksums from the extended file attributes.
     This feature can be used to speed up consecutive runs.
 
-    **CAUTION:** This is a potentially unsafe feature. The cache file might be
-    changed accidentally, potentially causing ``rmlint`` to report false
-    positives. As a security feature the `mtime` of each cached file is checked
-    against the `mtime` of the time the checksum was created.
-
-    **NOTE:** The speedup you may experience may vary wildly. In some cases the
-    parsing of the json file might take longer than the actual hashing. Also,
-    the cached json file will not be of use when doing many modifications
-    between the runs, i.e. causing an update of `mtime` on most files. This
-    feature is mostly intended for large datasets in order to prevent the
-    re-hashing of large files.
+    **CAUTION:** This could potentially lead to false positives if file contents are
+    somehow modified without changing the file mtime.
 
     **NOTE:** Many tools do not support extended file attributes properly,
     resulting in a loss of the information when copying the file or editing it.
@@ -484,7 +521,7 @@ Rarely used, miscellaneous options
     Also it might be useful for approximate comparison where it suffices when
     the file is the same in the middle part.
 
-:``-Z --mtime-window=T`` (**default\:** *-1*)
+:``-Z --mtime-window=T`` (**default\:** *-1*):
 
     Only consider those files as duplicates that have the same content and
     the same modification time (mtime) within a certain window of *T* seconds.
@@ -678,6 +715,10 @@ This is a collection of common usecases and other tricks:
 
   ``$ rmlint backup // data --keep-all-tagged --must-match-tagged``
 
+* Compare if the directories a b c and are equal
+
+  ``$ rmlint --equal a b c; echo $?  # Will print 0 if they are equal``
+
 PROBLEMS
 ========
 
@@ -740,8 +781,8 @@ PROGRAM AUTHORS
 
 ``rmlint`` was written by:
 
-* Christopher <sahib> Pahl 2010-2015 (https://github.com/sahib)
-* Daniel <SeeSpotRun> T.   2014-2015 (https://github.com/SeeSpotRun)
+* Christopher <sahib> Pahl 2010-2017 (https://github.com/sahib)
+* Daniel <SeeSpotRun> T.   2014-2017 (https://github.com/SeeSpotRun)
 
 Also see the  http://rmlint.rtfd.org for other people that helped us.
 

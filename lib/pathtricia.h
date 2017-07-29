@@ -16,8 +16,8 @@
 *
 * Authors:
 *
-*  - Christopher <sahib> Pahl 2010-2015 (https://github.com/sahib)
-*  - Daniel <SeeSpotRun> T.   2014-2015 (https://github.com/SeeSpotRun)
+*  - Christopher <sahib> Pahl 2010-2017 (https://github.com/sahib)
+*  - Daniel <SeeSpotRun> T.   2014-2017 (https://github.com/SeeSpotRun)
 *
 * Hosted on http://github.com/sahib/rmlint
 *
@@ -26,8 +26,8 @@
 #ifndef RM_PATHTRICIA_H
 #define RM_PATHTRICIA_H
 
-#include <stdbool.h>
 #include <glib.h>
+#include <stdbool.h>
 
 typedef struct _RmNode {
     /* Element of the path */

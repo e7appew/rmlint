@@ -16,24 +16,23 @@
 *
 * Authors:
 *
-*  - Christopher <sahib> Pahl 2010-2015 (https://github.com/sahib)
-*  - Daniel <SeeSpotRun> T.   2014-2015 (https://github.com/SeeSpotRun)
+*  - Christopher <sahib> Pahl 2010-2017 (https://github.com/sahib)
+*  - Daniel <SeeSpotRun> T.   2014-2017 (https://github.com/SeeSpotRun)
 *
 * Hosted on http://github.com/sahib/rmlint
 */
 
 #include "file.h"
-#include "utilities.h"
 #include "session.h"
+#include "utilities.h"
 
 #include <string.h>
-#include <unistd.h>
+#include <string.h>
 #include <sys/file.h>
-#include <string.h>
+#include <unistd.h>
 
-RmFile *rm_file_new(struct RmSession *session, const char *path,
-                    RmStat *statp, RmLintType type, bool is_ppath, unsigned path_index,
-                    short depth) {
+RmFile *rm_file_new(struct RmSession *session, const char *path, RmStat *statp,
+                    RmLintType type, bool is_ppath, unsigned path_index, short depth) {
     RmCfg *cfg = session->cfg;
     RmOff actual_file_size = statp->st_size;
     RmOff start_seek = 0;
@@ -64,10 +63,13 @@ RmFile *rm_file_new(struct RmSession *session, const char *path,
 
     self->depth = depth;
     self->path_depth = rm_util_path_depth(path);
+    self->file_size = 0;
+    self->actual_file_size = 0;
 
     self->inode = statp->st_ino;
     self->dev = statp->st_dev;
     self->mtime = rm_sys_stat_mtime_float(statp);
+    self->is_new = (self->mtime >= cfg->min_mtime);
 
     if(type == RM_LINT_TYPE_DUPE_CANDIDATE) {
         if(cfg->use_absolute_end_offset) {
@@ -75,6 +77,13 @@ RmFile *rm_file_new(struct RmSession *session, const char *path,
         } else {
             self->file_size = actual_file_size * cfg->skip_end_factor;
         }
+
+        /* Check if the actual slice the file will be > 0; we don't want empty files in shredder */
+        if((self->file_size - start_seek) == 0 && actual_file_size != 0) {
+            return NULL;
+        }
+
+        self->actual_file_size = actual_file_size;
     }
 
     self->hash_offset = start_seek;
@@ -100,14 +109,15 @@ void rm_file_build_path(RmFile *file, char *buf) {
 }
 
 void rm_file_destroy(RmFile *file) {
-    if(file->hardlinks.is_head && file->hardlinks.files) {
-        g_queue_free_full(file->hardlinks.files, (GDestroyNotify)rm_file_destroy);
+    if(file->hardlinks) {
+        g_queue_remove(file->hardlinks, file);
+        if(file->hardlinks->length == 0) {
+            g_queue_free(file->hardlinks);
+        }
     }
 
-    // TODO: Make this more generic.
-    /* --xattr-read can write cksums in here */
-    if(file->folder && file->folder->data) {
-        g_free(file->folder->data);
+    if(file->ext_cksum) {
+        g_free(file->ext_cksum);
     }
 
     if(file->free_digest) {
@@ -147,4 +157,101 @@ RmLintType rm_file_string_to_lint_type(const char *type) {
 
 gint rm_file_basenames_cmp(const RmFile *file_a, const RmFile *file_b) {
     return g_ascii_strcasecmp(file_a->folder->basename, file_b->folder->basename);
+}
+
+void rm_file_hardlink_add(RmFile *head, RmFile *link) {
+    if(!head->hardlinks) {
+        head->hardlinks = g_queue_new();
+    }
+    link->hardlinks = head->hardlinks;
+    g_queue_push_tail(head->hardlinks, link);
+}
+
+static gint rm_file_foreach_hardlink(RmFile *f, RmRFunc func, gpointer user_data) {
+    if(!f->hardlinks) {
+        return func(f, user_data);
+    }
+
+    gint result = 0;
+    for(GList *iter = f->hardlinks->head; iter; iter = iter->next) {
+        result += func(iter->data, user_data);
+    }
+    return result;
+}
+
+void rm_file_cluster_add(RmFile *host, RmFile *guest) {
+    rm_assert_gentle(!guest->cluster || host == guest);
+    if(!host->cluster) {
+        host->cluster = g_queue_new();
+        if(guest != host) {
+            rm_file_cluster_add(host, host);
+        }
+    }
+    guest->cluster = host->cluster;
+    g_queue_push_tail(host->cluster, guest);
+}
+
+void rm_file_cluster_remove(RmFile *file) {
+    rm_assert_gentle(file->cluster);
+
+    g_queue_remove(file->cluster, file);
+    if(file->cluster->length == 0) {
+        g_queue_free(file->cluster);
+    }
+    file->cluster = NULL;
+}
+
+gint rm_file_foreach(RmFile *f, RmRFunc func, gpointer user_data) {
+    if(!f->cluster) {
+        return rm_file_foreach_hardlink(f, func, user_data);
+    }
+
+    gint result = 0;
+    for(GList *iter = f->cluster->head; iter; iter = iter->next) {
+        result += rm_file_foreach_hardlink(iter->data, func, user_data);
+    }
+    return result;
+}
+
+enum RmFileCountType {
+    RM_FILE_COUNT_FILES,
+    RM_FILE_COUNT_PREFD,
+    RM_FILE_COUNT_NPREFD,
+    RM_FILE_COUNT_NEW,
+};
+
+static gint rm_file_count(RmFile *file, gint type) {
+    switch(type) {
+    case RM_FILE_COUNT_FILES:
+        return 1;
+    case RM_FILE_COUNT_PREFD:
+        return file->is_prefd;
+    case RM_FILE_COUNT_NPREFD:
+        return !file->is_prefd;
+    case RM_FILE_COUNT_NEW:
+        return file->is_new;
+    default:
+        rm_assert_gentle(FALSE);
+        return 0;
+    }
+}
+
+gint rm_file_n_files(RmFile *file) {
+    return rm_file_foreach(file, (RmRFunc)rm_file_count,
+                           GINT_TO_POINTER(RM_FILE_COUNT_FILES));
+}
+
+gint rm_file_n_new(RmFile *file) {
+    return rm_file_foreach(file, (RmRFunc)rm_file_count,
+                           GINT_TO_POINTER(RM_FILE_COUNT_NEW));
+}
+
+gint rm_file_n_prefd(RmFile *file) {
+    return rm_file_foreach(file, (RmRFunc)rm_file_count,
+                           GINT_TO_POINTER(RM_FILE_COUNT_PREFD));
+}
+
+gint rm_file_n_nprefd(RmFile *file) {
+    return rm_file_foreach(file, (RmRFunc)rm_file_count,
+                           GINT_TO_POINTER(RM_FILE_COUNT_NPREFD));
 }

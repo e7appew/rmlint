@@ -16,8 +16,8 @@
  *
  * Authors:
  *
- *  - Christopher <sahib> Pahl 2010-2015 (https://github.com/sahib)
- *  - Daniel <SeeSpotRun> T.   2014-2015 (https://github.com/SeeSpotRun)
+ *  - Christopher <sahib> Pahl 2010-2017 (https://github.com/sahib)
+ *  - Daniel <SeeSpotRun> T.   2014-2017 (https://github.com/SeeSpotRun)
  *
  * Hosted on http://github.com/sahib/rmlint
  *
@@ -25,34 +25,34 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <errno.h>
-#include <search.h>
-#include <sys/time.h>
 #include <glib.h>
 #include <glib/gstdio.h>
+#include <search.h>
+#include <sys/time.h>
 
 #include "cmdline.h"
-#include "treemerge.h"
-#include "traverse.h"
-#include "preprocess.h"
-#include "shredder.h"
-#include "utilities.h"
 #include "formats.h"
-#include "replay.h"
 #include "hash-utility.h"
 #include "md-scheduler.h"
+#include "preprocess.h"
+#include "replay.h"
+#include "shredder.h"
+#include "traverse.h"
+#include "treemerge.h"
+#include "utilities.h"
 
 #if HAVE_BTRFS_H
-#include <sys/ioctl.h>
 #include <linux/btrfs.h>
+#include <sys/ioctl.h>
 #endif
 
 static void rm_cmd_show_version(void) {
@@ -112,7 +112,8 @@ static void rm_cmd_show_manpage(void) {
     if(!found_manpage) {
         rm_log_warning_line(_("You seem to have no manpage for rmlint."));
         rm_log_warning_line(_("Please run rmlint --help to show the regular help."));
-        rm_log_warning_line(_("Alternatively, visit https://rmlint.rtfd.org for the online documentation"));
+        rm_log_warning_line(_(
+            "Alternatively, visit https://rmlint.rtfd.org for the online documentation"));
     }
 
     exit(0);
@@ -129,31 +130,30 @@ static void rm_cmd_show_manpage(void) {
 * We try to work around this by manually installing dist-packages to the
 * sys.path by first calling a small bootstrap script.
 */
-static const char RM_PY_BOOTSTRAP[] = ""
-"# This is a bootstrap script for the rmlint-gui.                              \n"
-"# See the src/rmlint.c in rmlint's source for more info.                      \n"
-"import sys, os, site                                                          \n"
-"                                                                              \n"
-"# Also default to dist-packages on debian(-based):                            \n"
-"sites = site.getsitepackages()                                                \n"
-"sys.path.extend([d.replace('dist-packages', 'site-packages') for d in sites]) \n"
-"sys.path.extend(sites)                                                        \n"
-"                                                                              \n"
-"# Cleanup self:                                                               \n"
-"try:                                                                          \n"
-"    os.remove(sys.argv[0])                                                    \n"
-"except:                                                                       \n"
-"    print('Note: Could not remove bootstrap script at ', sys.argv[0])         \n"
-"                                                                              \n"
-"# Run shredder by importing the main:                                         \n"
-"try:                                                                          \n"
-"    import shredder                                                           \n"
-"    shredder.run_gui()                                                        \n"
-"except ImportError as err:                                                    \n"
-"    print('Failed to load shredder:', err)                                    \n"
-"    print('This might be due to a corrupted install; try reinstalling.')      \n"
-;
-
+static const char RM_PY_BOOTSTRAP[] =
+    ""
+    "# This is a bootstrap script for the rmlint-gui.                              \n"
+    "# See the src/rmlint.c in rmlint's source for more info.                      \n"
+    "import sys, os, site                                                          \n"
+    "                                                                              \n"
+    "# Also default to dist-packages on debian(-based):                            \n"
+    "sites = site.getsitepackages()                                                \n"
+    "sys.path.extend([d.replace('dist-packages', 'site-packages') for d in sites]) \n"
+    "sys.path.extend(sites)                                                        \n"
+    "                                                                              \n"
+    "# Cleanup self:                                                               \n"
+    "try:                                                                          \n"
+    "    os.remove(sys.argv[0])                                                    \n"
+    "except:                                                                       \n"
+    "    print('Note: Could not remove bootstrap script at ', sys.argv[0])         \n"
+    "                                                                              \n"
+    "# Run shredder by importing the main:                                         \n"
+    "try:                                                                          \n"
+    "    import shredder                                                           \n"
+    "    shredder.run_gui()                                                        \n"
+    "except ImportError as err:                                                    \n"
+    "    print('Failed to load shredder:', err)                                    \n"
+    "    print('This might be due to a corrupted install; try reinstalling.')      \n";
 
 static void rm_cmd_start_gui(int argc, const char **argv) {
     const char *commands[] = {"python3", "python", NULL};
@@ -161,19 +161,19 @@ static void rm_cmd_start_gui(int argc, const char **argv) {
 
     GError *error = NULL;
     gchar *bootstrap_path = NULL;
-    int bootstrap_fd = g_file_open_tmp(".shredder-bootstrap.py.XXXXXX", &bootstrap_path, &error);
+    int bootstrap_fd =
+        g_file_open_tmp(".shredder-bootstrap.py.XXXXXX", &bootstrap_path, &error);
 
     if(bootstrap_fd < 0) {
-        rm_log_warning("Could not bootstrap gui: Unable to create tempfile: %s", error->message);
+        rm_log_warning("Could not bootstrap gui: Unable to create tempfile: %s",
+                       error->message);
         g_error_free(error);
         return;
     }
 
     if(write(bootstrap_fd, RM_PY_BOOTSTRAP, sizeof(RM_PY_BOOTSTRAP)) < 0) {
-        rm_log_warning_line(
-            "Could not bootstrap gui: Unable to write to tempfile: %s",
-            g_strerror(errno)
-        );
+        rm_log_warning_line("Could not bootstrap gui: Unable to write to tempfile: %s",
+                            g_strerror(errno));
         return;
     }
 
@@ -237,7 +237,8 @@ static void rm_cmd_btrfs_clone_usage(void) {
     rm_log_error(_("Usage: rmlint --btrfs-clone [-r] source dest\n"));
 }
 
-static void rm_cmd_btrfs_clone(const char *source, const char *dest, const gboolean read_only) {
+static void rm_cmd_btrfs_clone(const char *source, const char *dest,
+                               const gboolean read_only) {
 #if HAVE_BTRFS_H
     struct {
         struct btrfs_ioctl_same_args args;
@@ -254,8 +255,9 @@ static void rm_cmd_btrfs_clone(const char *source, const char *dest, const gbool
     extent_same.info.fd = rm_sys_open(dest, read_only ? O_RDONLY : O_RDWR);
     if(extent_same.info.fd < 0) {
         rm_log_error_line(_("btrfs clone: error %i: failed to open dest file.%s"),
-                errno,
-                read_only ? "" : _("\n\t(if target is a read-only snapshot then -r option is required)"));
+                          errno,
+                          read_only ? "" : _("\n\t(if target is a read-only snapshot "
+                                             "then -r option is required)"));
         rm_sys_close(source_fd);
         return;
     }
@@ -293,8 +295,7 @@ static void rm_cmd_btrfs_clone(const char *source, const char *dest, const gbool
         rm_log_error_line(_("BTRFS_IOC_FILE_EXTENT_SAME returned error: (%d) %s"), ret,
                           strerror(ret));
     } else if(extent_same.info.status == -22 && read_only && getuid()) {
-        rm_log_error_line(
-            _("Need to run as root user to clone to a read-only snapshot"));
+        rm_log_error_line(_("Need to run as root user to clone to a read-only snapshot"));
     } else if(extent_same.info.status < 0) {
         rm_log_error_line(_("BTRFS_IOC_FILE_EXTENT_SAME returned status %d for file %s"),
                           extent_same.info.status, dest);
@@ -315,7 +316,7 @@ static int rm_cmd_maybe_btrfs_clone(RmSession *session, int argc, const char **a
         /* treat as a btrfs clone subcommand... */
         if(!rm_session_check_kernel_version(session, 4, 2)) {
             rm_log_warning_line("This needs at least linux >= 4.2.");
-        } else if(argc ==5 && g_strcmp0("-r", argv[2]) == 0) {
+        } else if(argc == 5 && g_strcmp0("-r", argv[2]) == 0) {
             /* -r option for deduping read-only snapshots */
             /* TODO: add check for root user permissions */
             rm_cmd_btrfs_clone(argv[3], argv[4], TRUE);
@@ -452,50 +453,18 @@ static GLogLevelFlags VERBOSITY_TO_LOG_LEVEL[] = {[0] = G_LOG_LEVEL_CRITICAL,
                                                         G_LOG_LEVEL_INFO,
                                                   [4] = G_LOG_LEVEL_DEBUG};
 
-static bool rm_cmd_add_path(RmSession *session, bool is_prefd, int index,
-                            const char *path) {
-    RmCfg *cfg = session->cfg;
-    int rc = 0;
-
-#if HAVE_FACCESSAT
-    rc = faccessat(AT_FDCWD, path, R_OK, AT_EACCESS);
-#else
-    rc = access(path, R_OK);
-#endif
-
-    if(rc != 0) {
-        rm_log_warning_line(_("Can't open directory or file \"%s\": %s"), path,
-                            strerror(errno));
-        return FALSE;
-    } else {
-        cfg->is_prefd = g_realloc(cfg->is_prefd, sizeof(char) * (index + 1));
-        cfg->is_prefd[index] = is_prefd;
-        cfg->paths = g_realloc(cfg->paths, sizeof(char *) * (index + 2));
-
-        char *abs_path = NULL;
-        if(strncmp(path, "//", 2) == 0) {
-            abs_path = g_strdup(path);
-        } else {
-            abs_path = realpath(path, NULL);
-        }
-
-        cfg->paths[index] = abs_path ? abs_path : g_strdup(path);
-        cfg->paths[index + 1] = NULL;
-        return TRUE;
-    }
-}
-
-static int rm_cmd_read_paths_from_stdin(RmSession *session, bool is_prefd, int index) {
-    int paths_added = 0;
+static bool rm_cmd_read_paths_from_stdin(RmSession *session, bool is_prefd) {
     char path_buf[PATH_MAX];
     char *tokbuf = NULL;
+    bool all_paths_read = true;
 
+    /* Still read all paths on errors, so the user knows all paths that failed */
     while(fgets(path_buf, PATH_MAX, stdin)) {
-        paths_added += rm_cmd_add_path(session, is_prefd, index + paths_added,
-                                       strtok_r(path_buf, "\n", &tokbuf));
+        all_paths_read &=
+            rm_cfg_add_path(session->cfg, is_prefd, strtok_r(path_buf, "\n", &tokbuf));
     }
 
-    return paths_added;
+    return all_paths_read;
 }
 
 static bool rm_cmd_parse_output_pair(RmSession *session, const char *pair,
@@ -782,8 +751,9 @@ static bool rm_cmd_timestamp_is_plain(const char *stamp) {
     return strchr(stamp, 'T') ? false : true;
 }
 
-static gboolean rm_cmd_parse_timestamp(_UNUSED const char *option_name, const gchar *string,
-                                       RmSession *session, GError **error) {
+static gboolean rm_cmd_parse_timestamp(_UNUSED const char *option_name,
+                                       const gchar *string, RmSession *session,
+                                       GError **error) {
     gdouble result = 0;
     bool plain = rm_cmd_timestamp_is_plain(string);
     session->cfg->filter_mtime = false;
@@ -804,7 +774,7 @@ static gboolean rm_cmd_parse_timestamp(_UNUSED const char *option_name, const gc
         }
     }
 
-    if(FLOAT_IS_ZERO(result) || result < 0) {
+    if(FLOAT_SIGN_DIFF(result, 0.0, MTIME_TOL) != 1) {
         g_set_error(error, RM_ERROR_QUARK, 0, _("Unable to parse time spec \"%s\""),
                     string);
         return false;
@@ -968,8 +938,9 @@ static gboolean rm_cmd_parse_mem(const gchar *size_spec, GError **error, RmOff *
     }
 }
 
-static gboolean rm_cmd_parse_limit_mem(_UNUSED const char *option_name, const gchar *size_spec,
-                                       RmSession *session, GError **error) {
+static gboolean rm_cmd_parse_limit_mem(_UNUSED const char *option_name,
+                                       const gchar *size_spec, RmSession *session,
+                                       GError **error) {
     return (rm_cmd_parse_mem(size_spec, error, &session->cfg->total_mem));
 }
 
@@ -997,16 +968,15 @@ static gboolean rm_cmd_parse_clamp_top(_UNUSED const char *option_name, const gc
     return (error && *error == NULL);
 }
 
-static gboolean rm_cmd_parse_progress(_UNUSED const char *option_name, _UNUSED const gchar *value,
-                                      RmSession *session, _UNUSED GError **error) {
+static gboolean rm_cmd_parse_progress(_UNUSED const char *option_name,
+                                      _UNUSED const gchar *value, RmSession *session,
+                                      _UNUSED GError **error) {
     rm_fmt_clear(session->formats);
     rm_fmt_add(session->formats, "progressbar", "stdout");
     rm_fmt_add(session->formats, "summary", "stdout");
 
     session->cfg->progress_enabled = true;
 
-    /* Set verbosity to minimal */
-    rm_cmd_set_verbosity_from_cnt(session->cfg, 1);
     return true;
 }
 
@@ -1014,7 +984,7 @@ static void rm_cmd_set_default_outputs(RmSession *session) {
     rm_fmt_add(session->formats, "pretty", "stdout");
     rm_fmt_add(session->formats, "summary", "stdout");
 
-    if(session->do_replay) {
+    if(session->cfg->replay) {
         rm_fmt_add(session->formats, "sh", "rmlint.replay.sh");
         rm_fmt_add(session->formats, "json", "rmlint.replay.json");
     } else {
@@ -1032,20 +1002,23 @@ static gboolean rm_cmd_parse_no_progress(_UNUSED const char *option_name,
     return true;
 }
 
-static gboolean rm_cmd_parse_loud(_UNUSED const char *option_name, _UNUSED const gchar *count,
-                                  RmSession *session, _UNUSED GError **error) {
+static gboolean rm_cmd_parse_loud(_UNUSED const char *option_name,
+                                  _UNUSED const gchar *count, RmSession *session,
+                                  _UNUSED GError **error) {
     rm_cmd_set_verbosity_from_cnt(session->cfg, ++session->verbosity_count);
     return true;
 }
 
-static gboolean rm_cmd_parse_quiet(_UNUSED const char *option_name, _UNUSED const gchar *count,
-                                   RmSession *session, _UNUSED GError **error) {
+static gboolean rm_cmd_parse_quiet(_UNUSED const char *option_name,
+                                   _UNUSED const gchar *count, RmSession *session,
+                                   _UNUSED GError **error) {
     rm_cmd_set_verbosity_from_cnt(session->cfg, --session->verbosity_count);
     return true;
 }
 
-static gboolean rm_cmd_parse_paranoid(_UNUSED const char *option_name, _UNUSED const gchar *count,
-                                      RmSession *session, _UNUSED GError **error) {
+static gboolean rm_cmd_parse_paranoid(_UNUSED const char *option_name,
+                                      _UNUSED const gchar *count, RmSession *session,
+                                      _UNUSED GError **error) {
     rm_cmd_set_paranoia_from_cnt(session->cfg, ++session->paranoia_count, error);
     return true;
 }
@@ -1058,8 +1031,8 @@ static gboolean rm_cmd_parse_less_paranoid(_UNUSED const char *option_name,
 }
 
 static gboolean rm_cmd_parse_partial_hidden(_UNUSED const char *option_name,
-                                            _UNUSED const gchar *count, RmSession *session,
-                                            _UNUSED GError **error) {
+                                            _UNUSED const gchar *count,
+                                            RmSession *session, _UNUSED GError **error) {
     RmCfg *cfg = session->cfg;
     cfg->ignore_hidden = false;
     cfg->partial_hidden = true;
@@ -1078,8 +1051,8 @@ static gboolean rm_cmd_parse_see_symlinks(_UNUSED const char *option_name,
 }
 
 static gboolean rm_cmd_parse_follow_symlinks(_UNUSED const char *option_name,
-                                             _UNUSED const gchar *count, RmSession *session,
-                                             _UNUSED GError **error) {
+                                             _UNUSED const gchar *count,
+                                             RmSession *session, _UNUSED GError **error) {
     RmCfg *cfg = session->cfg;
     cfg->see_symlinks = false;
     cfg->follow_symlinks = true;
@@ -1088,7 +1061,8 @@ static gboolean rm_cmd_parse_follow_symlinks(_UNUSED const char *option_name,
 }
 
 static gboolean rm_cmd_parse_no_partial_hidden(_UNUSED const char *option_name,
-                                               _UNUSED const gchar *count, RmSession *session,
+                                               _UNUSED const gchar *count,
+                                               RmSession *session,
                                                _UNUSED GError **error) {
     RmCfg *cfg = session->cfg;
     cfg->ignore_hidden = true;
@@ -1098,7 +1072,8 @@ static gboolean rm_cmd_parse_no_partial_hidden(_UNUSED const char *option_name,
 }
 
 static gboolean rm_cmd_parse_merge_directories(_UNUSED const char *option_name,
-                                               _UNUSED const gchar *count, RmSession *session,
+                                               _UNUSED const gchar *_,
+                                               RmSession *session,
                                                _UNUSED GError **error) {
     RmCfg *cfg = session->cfg;
     cfg->merge_directories = true;
@@ -1118,8 +1093,17 @@ static gboolean rm_cmd_parse_merge_directories(_UNUSED const char *option_name,
     return true;
 }
 
-static gboolean rm_cmd_parse_permissions(_UNUSED const char *option_name, const gchar *perms,
-                                         RmSession *session, GError **error) {
+static gboolean rm_cmd_parse_honour_dir_layout(_UNUSED const char *option_name,
+                                               _UNUSED const gchar *_,
+                                               RmSession *session,
+                                               _UNUSED GError **error) {
+    session->cfg->honour_dir_layout = true;
+    return true;
+}
+
+static gboolean rm_cmd_parse_permissions(_UNUSED const char *option_name,
+                                         const gchar *perms, RmSession *session,
+                                         GError **error) {
     RmCfg *cfg = session->cfg;
 
     if(perms == NULL) {
@@ -1160,8 +1144,9 @@ static gboolean rm_cmd_check_lettervec(const char *option_name, const char *crit
     return true;
 }
 
-static gboolean rm_cmd_parse_sortby(_UNUSED const char *option_name, const gchar *criteria,
-                                    RmSession *session, GError **error) {
+static gboolean rm_cmd_parse_sortby(_UNUSED const char *option_name,
+                                    const gchar *criteria, RmSession *session,
+                                    GError **error) {
     RmCfg *cfg = session->cfg;
     if(!rm_cmd_check_lettervec(option_name, criteria, "moanspMOANSP", error)) {
         return false;
@@ -1176,8 +1161,9 @@ static gboolean rm_cmd_parse_sortby(_UNUSED const char *option_name, const gchar
     return true;
 }
 
-static gboolean rm_cmd_parse_rankby(_UNUSED const char *option_name, const gchar *criteria,
-                                    RmSession *session, GError **error) {
+static gboolean rm_cmd_parse_rankby(_UNUSED const char *option_name,
+                                    const gchar *criteria, RmSession *session,
+                                    GError **error) {
     RmCfg *cfg = session->cfg;
 
     g_free(cfg->sort_criteria);
@@ -1196,11 +1182,31 @@ static gboolean rm_cmd_parse_rankby(_UNUSED const char *option_name, const gchar
     return true;
 }
 
-static gboolean rm_cmd_parse_replay(_UNUSED const char *option_name, _UNUSED const gchar *x,
-                                    RmSession *session, _UNUSED GError **error) {
-
-    session->do_replay = true;
+static gboolean rm_cmd_parse_replay(_UNUSED const char *option_name,
+                                    _UNUSED const gchar *x, RmSession *session,
+                                    _UNUSED GError **error) {
+    session->cfg->replay = true;
     session->cfg->cache_file_structs = true;
+    return true;
+}
+
+static gboolean rm_cmd_parse_equal(_UNUSED const char *option_name,
+                                   _UNUSED const gchar *x, RmSession *session,
+                                   _UNUSED GError **error) {
+    rm_cmd_parse_merge_directories(NULL, NULL, session, error);
+    rm_cmd_parse_lint_types(NULL, "df,dd", session, error);
+    session->cfg->run_equal_mode = true;
+
+    /* See issue #233; partial hidden needs to be disabled */
+    session->cfg->partial_hidden = false;
+    session->cfg->ignore_hidden = false;
+
+    /* See issue #234 fore more discussion on this */
+    session->cfg->limits_specified = true;
+    session->cfg->minsize = 0;
+
+    rm_fmt_clear(session->formats);
+    rm_fmt_add(session->formats, "_equal", "stdout");
     return true;
 }
 
@@ -1232,42 +1238,33 @@ static bool rm_cmd_set_cmdline(RmCfg *cfg, int argc, char **argv) {
 }
 
 static bool rm_cmd_set_paths(RmSession *session, char **paths) {
-    int path_index = 0;
     bool is_prefd = false;
-    bool not_all_paths_read = false;
+    bool all_paths_valid = true;
 
     RmCfg *cfg = session->cfg;
 
     /* Check the directory to be valid */
     for(int i = 0; paths && paths[i]; ++i) {
-        int read_paths = 0;
-        const char *dir_path = paths[i];
-
-        if(strncmp(dir_path, "-", 1) == 0) {
-            read_paths = rm_cmd_read_paths_from_stdin(session, is_prefd, path_index);
-        } else if(strncmp(dir_path, "//", 2) == 0 && strlen(dir_path) == 2) {
+        if(strcmp(paths[i], "-") == 0) {
+            /* option '-' means read paths from stdin */
+            all_paths_valid &= rm_cmd_read_paths_from_stdin(session, is_prefd);
+        } else if(strcmp(paths[i], "//") == 0) {
+            /* the '//' separator separates non-preferred paths from preferred */
             is_prefd = !is_prefd;
         } else {
-            read_paths = rm_cmd_add_path(session, is_prefd, path_index, paths[i]);
-        }
-
-        if(read_paths == 0) {
-            not_all_paths_read = true;
-        } else {
-            path_index += read_paths;
+            all_paths_valid &= rm_cfg_add_path(cfg, is_prefd, paths[i]);
         }
     }
 
     g_strfreev(paths);
 
-    if(path_index == 0 && not_all_paths_read == false) {
+    if(cfg->path_count == 0 && all_paths_valid) {
         /* Still no path set? - use `pwd` */
-        rm_cmd_add_path(session, is_prefd, path_index, cfg->iwd);
-    } else if(path_index == 0 && not_all_paths_read) {
-        return false;
+        rm_cfg_add_path(session->cfg, is_prefd, cfg->iwd);
     }
 
-    return true;
+    /* Only return success if everything is fine. */
+    return all_paths_valid;
 }
 
 static bool rm_cmd_set_outputs(RmSession *session, GError **error) {
@@ -1281,6 +1278,25 @@ static bool rm_cmd_set_outputs(RmSession *session, GError **error) {
     }
 
     return true;
+}
+
+static char * rm_cmd_find_own_executable_path(RmSession *session, char **argv) {
+    RmCfg *cfg = session->cfg;
+    if(cfg->full_argv0_path == NULL) {
+        /* Note: this check will only work on linux! */
+        char exe_path[PATH_MAX] = {0};
+        if(readlink("/proc/self/exe", exe_path, sizeof(exe_path)) != -1) {
+            return g_strdup(exe_path);
+        }
+
+        if(strchr(argv[0], '/')) {
+            return realpath(argv[0], NULL);
+        }
+
+        /* More checks might be added here in future. */
+    }
+
+    return NULL;
 }
 
 /* Parse the commandline and set arguments in 'settings' (glob. var accordingly) */
@@ -1341,6 +1357,7 @@ bool rm_cmd_parse_args(int argc, char **argv, RmSession *session) {
         {"loud"     , 'v' , EMPTY , G_OPTION_ARG_CALLBACK , FUNC(loud)     , _("Be more verbose (-vvv for much more)") , NULL} ,
         {"quiet"    , 'V' , EMPTY , G_OPTION_ARG_CALLBACK , FUNC(quiet)    , _("Be less verbose (-VVV for much less)") , NULL} ,
         {"replay"   , 'Y' , EMPTY , G_OPTION_ARG_CALLBACK , FUNC(replay)   , _("Re-output a json file")                , "path/to/rmlint.json"} ,
+        {"equal"    ,  0 ,  EMPTY , G_OPTION_ARG_CALLBACK , FUNC(equal)    , _("Test for equality of PATHS")           , "PATHS"}           ,
 
         /* Trivial boolean options */
         {"no-with-color"            , 'W'  , DISABLE   , G_OPTION_ARG_NONE      , &cfg->with_color               , _("Be not that colorful")                                                 , NULL}     ,
@@ -1357,6 +1374,7 @@ bool rm_cmd_parse_args(int argc, char **argv, RmSession *session) {
         {"match-extension"          , 'e'  , 0         , G_OPTION_ARG_NONE      , &cfg->match_with_extension     , _("Only find twins with same extension")                                  , NULL}     ,
         {"match-without-extension"  , 'i'  , 0         , G_OPTION_ARG_NONE      , &cfg->match_without_extension  , _("Only find twins with same basename minus extension")                   , NULL}     ,
         {"merge-directories"        , 'D'  , EMPTY     , G_OPTION_ARG_CALLBACK  , FUNC(merge_directories)        , _("Find duplicate directories")                                           , NULL}     ,
+        {"honour-dir-layout"        , 'j'  , EMPTY     , G_OPTION_ARG_CALLBACK  , FUNC(honour_dir_layout)        , _("Only find directories with same file layout")                          , NULL}     ,
         {"perms"                    , 'z'  , OPTIONAL  , G_OPTION_ARG_CALLBACK  , FUNC(permissions)              , _("Only use files with certain permissions")                              , "[RWX]+"} ,
         {"no-hardlinked"            , 'L'  , DISABLE   , G_OPTION_ARG_NONE      , &cfg->find_hardlinked_dupes    , _("Ignore hardlink twins")                                                , NULL}     ,
         {"partial-hidden"           , 0    , EMPTY     , G_OPTION_ARG_CALLBACK  , FUNC(partial_hidden)           , _("Find hidden files in duplicate folders only")                          , NULL}     ,
@@ -1433,6 +1451,13 @@ bool rm_cmd_parse_args(int argc, char **argv, RmSession *session) {
         goto failure;
     }
 
+    /* Attempt to find out path to own executable.
+     * This is used in the shell script to call the executable
+     * for special modes like --btrfs-clone or --equal.
+     * We want to make sure the installed version has this
+     * */
+    cfg->full_argv0_path = rm_cmd_find_own_executable_path(session, argv);
+
     ////////////////////
     // OPTION PARSING //
     ////////////////////
@@ -1481,7 +1506,7 @@ bool rm_cmd_parse_args(int argc, char **argv, RmSession *session) {
         session->cmdline_parse_error = TRUE;
     }
 
-    /* Silent fixes of invalid numberic input */
+    /* Silent fixes of invalid numeric input */
     cfg->threads = CLAMP(cfg->threads, 1, 128);
     cfg->depth = CLAMP(cfg->depth, 1, PATH_MAX / 2 + 1);
 
@@ -1490,6 +1515,10 @@ bool rm_cmd_parse_args(int argc, char **argv, RmSession *session) {
          * If the latter is not specfified, ignore it all together */
         cfg->ignore_hidden = true;
         cfg->partial_hidden = false;
+    }
+
+    if(cfg->honour_dir_layout && !cfg->merge_directories) {
+        rm_log_warning_line(_("--honour-dir-layout (-j) makes no sense without --merge-directories (-D)"));
     }
 
     if(cfg->progress_enabled) {
@@ -1519,16 +1548,22 @@ bool rm_cmd_parse_args(int argc, char **argv, RmSession *session) {
         error = g_error_new(RM_ERROR_QUARK, 0,
                             _("-q (--clamp-low) should be lower than -Q (--clamp-top)"));
     } else if(!rm_cmd_set_paths(session, paths)) {
-        error = g_error_new(RM_ERROR_QUARK, 0, _("No valid paths given."));
+        error = g_error_new(RM_ERROR_QUARK, 0, _("Not all given paths are valid. Aborting"));
     } else if(!rm_cmd_set_outputs(session, &error)) {
         /* Something wrong with the outputs */
     } else if(cfg->follow_symlinks && cfg->see_symlinks) {
-        rm_log_error("Program error: Cannot do both follow_symlinks and see_symlinks.");
+        rm_log_error("Program error: Cannot do both follow_symlinks and see_symlinks");
         rm_assert_gentle_not_reached();
     }
+
 failure:
     if(error != NULL) {
         rm_cmd_on_error(NULL, NULL, session, &error);
+    }
+
+    if(cfg->progress_enabled) {
+        /* Set verbosity to minimal */
+        rm_cmd_set_verbosity_from_cnt(session->cfg, 1);
     }
 
     g_option_context_free(option_parser);
@@ -1543,46 +1578,14 @@ static int rm_cmd_replay_main(RmSession *session) {
     bool one_valid_json = false;
     RmCfg *cfg = session->cfg;
 
-    int json_file_count = 0, total_count = 0;
-    for(int i = 0; cfg->paths[i]; i++) {
-        json_file_count += !!g_str_has_suffix(cfg->paths[i], ".json");
-        total_count++;
-    }
+    for(GSList *iter = cfg->json_paths; iter; iter = iter->next) {
+        RmPath *jsonpath = iter->data;
 
-    /* If the commandline only consisted of json files,
-     * we assume `pwd` as path to check.
-     */
-    if(json_file_count == total_count) {
-        rm_cmd_add_path(session, false, total_count, cfg->iwd);
-    }
-
-    for(int i = 0; cfg->paths[i]; i++) {
-        char *json_file = cfg->paths[i];
-        if(!g_str_has_suffix(json_file, ".json")) {
-            continue;
-        }
-
-        /*  remember if this path was prefd */
-        bool is_prefd = cfg->is_prefd[i];
-
-        /* Remove the file from the actual paths to scan. */
-        for(int j = i; cfg->paths[j]; j++) {
-            cfg->paths[j] = cfg->paths[j + 1];
-            if(cfg->paths[j + 1]) {
-                cfg->is_prefd[j] = cfg->is_prefd[j + 1];
-            }
-        }
-
-        if(!rm_parrot_cage_load(&cage, json_file, is_prefd)) {
-            rm_log_warning_line("Loading %s failed.", json_file);
+        if(!rm_parrot_cage_load(&cage, jsonpath->path, jsonpath->is_prefd)) {
+            rm_log_warning_line("Loading %s failed.", jsonpath->path);
         } else {
             one_valid_json = true;
         }
-
-        g_free(json_file);
-
-        /* Next element is now at current pos; adjust. */
-        i--;
     }
 
     if(!one_valid_json) {
@@ -1604,7 +1607,7 @@ int rm_cmd_main(RmSession *session) {
 
     rm_fmt_set_state(session->formats, RM_PROGRESS_STATE_INIT);
 
-    if(session->do_replay) {
+    if(session->cfg->replay) {
         return rm_cmd_replay_main(session);
     }
 
@@ -1615,11 +1618,10 @@ int rm_cmd_main(RmSession *session) {
     }
 
     if(session->mounts == NULL) {
-        rm_log_debug_line("No mount table created.");
+       rm_log_debug_line("No mount table created.");
     }
 
-    session->mds = rm_mds_new(cfg->threads, session->mounts,
-                              cfg->fake_pathindex_as_disk);
+    session->mds = rm_mds_new(cfg->threads, session->mounts, cfg->fake_pathindex_as_disk);
 
     rm_traverse_tree(session);
 
@@ -1628,7 +1630,30 @@ int rm_cmd_main(RmSession *session) {
 
     if(cfg->merge_directories) {
         rm_assert_gentle(cfg->cache_file_structs);
+
+        /* Currently we cannot use -D and the cloning on btrfs, since this assumes the same layout
+         * on two dupicate directories which is likely not a valid assumption.
+         * Emit a warning if the raw -D is used in conjunction with that.
+         * */
+        const char *handler_key = rm_fmt_get_config_value(session->formats, "sh", "handler");
+        const char *clone_key = rm_fmt_get_config_value(session->formats, "sh", "clone");
+        if(
+            cfg->honour_dir_layout == false && (
+                (handler_key != NULL && strstr(handler_key, "clone") != NULL) ||
+                clone_key != NULL
+            )
+        ) {
+            rm_log_error_line(_("Using -D together with -c sh:clone is currently not possible. Sorry."));
+            rm_log_error_line(_("Either do not use -D, or attempt to run again with -Dj."));
+            return EXIT_FAILURE;
+        }
+
         session->dir_merger = rm_tm_new(session);
+    }
+
+    if(session->total_files < 2 && session->cfg->run_equal_mode) {
+        rm_log_warning_line(_("Not enough files for --equal (need at least two to compare)"));
+        return EXIT_FAILURE;
     }
 
     if(session->total_files >= 1) {
@@ -1667,6 +1692,10 @@ int rm_cmd_main(RmSession *session) {
                           " (not 0). Please report this.",
                           session->shred_files_remaining);
         exit_state = EXIT_FAILURE;
+    }
+
+    if(exit_state == EXIT_SUCCESS && cfg->run_equal_mode)  {
+        return session->equal_exit_code;
     }
 
     return exit_state;

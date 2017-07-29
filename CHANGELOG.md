@@ -4,7 +4,75 @@ All notable changes to this project will be documented in this file.
 
 The format follows [keepachangelog.com]. Please stick to it.
 
-## [2.5.0 Penetrating Pineapple] -- [unreleased]
+## [2.6.1 Penetrating Pineapple] -- 2017-06-13
+
+### Fixed
+
+* Fix build-error on macOS due to wrong usage of #ifdef.
+* Fix a bug in treemerge that sometimes counted hardlinks more than once.
+* Fix copyright year notice all over the source code.
+* Fix --equal to allow hidden files, files counting as other lint and empty files.
+* Fix --equal to allow path doubles so passing symlinks to the same file still yields a 0.
+  Due to those fixes the paranoia mode of ``rmlint.sh`` should run smoother (again) now.
+* Use a more sophisticated strategy to find the path to the own binary and fallback to ``$(which rmlint)``.
+* Workaround the bash bug that did not allow huge functions by bringing back the old approach without a function.
+
+### Changed
+
+* It is now possible to treat empty files as duplicates when specifying "--size 0".
+* Use the `cmp` builtin to compare regular in the shell script files again, since it's faster.
+* Abort early in ``--equal`` if an mismatch has been encountered.
+* Test the shell script more thoroughly to avoid release troubles.
+
+### Added
+
+* Add a new ``-c`` switch to ``rmlint.sh`` that cleans up empty directories while running the script.
+
+## [2.6.0 Penetrating Pineapple] -- 2017-06-03
+
+### Fixed
+
+* Do not chmod +x files that exist already (previous versions tried to +x e.g. /dev/null)
+* Support anonymous pipes in the sh formatter (Supported now: rmlint -o sh:>(cat))
+* Documentation should look a bit cleaner now.
+* Fixed a crash when a file was clamped to a size of 0.
+* Fixed a rounding error bug that can happen while sorting mtimes.
+* Fixed the slightly broken --mtime-window option (was too permissive in rare cases)
+* Force permissions (0755 for binary, 0644 for manpage) when installing files in the filesystem.
+* Fix wrong ordering when using -D without -k or -K.
+* Fix a space wasting bug that happened with -D and -c sh:link.
+* Fix a bug in treemerge that sometimes lead to directories not being detected (should be also slightly faster now)
+* Fix inconsistent handling of duplicate directories when using hardlinks, symlinks and reflinks.
+* Abort early if an invalid path has been given via commandline or stdin.
+* Do not silence errors while commandline parsing when using ``-g``.
+
+### Added
+
+* Added new checksums: blake2{s,sp,b,bp} and sha3{-256,-384,-512}. sha3 is an alias to sha3-256.
+* Support for GNU Hurd (well, at least it compiles :)
+* New "-o stats" formatter that prints some statistics about the run.
+* Progressbar now additionally shows an ETA time (how long rmlint will probably run)
+* New option ``--honour-dir-layout (-j)`` that makes ``--merge-directories (-D)``
+  also check if the directory layout is the same.
+* A new ``--equal`` option that works like the ``cmp`` utility, but supports directories.
+* Add a progress percentage to ``rmlint.sh`` for big runs.
+
+### Changed
+
+* Changed the default hash function to blake2b.
+* The default formatter (pretty) now also outputs the time used for the run.
+* Updated existing translations.
+
+## [2.4.6 Myopic Micrathene Bugfixes] -- 2017-01-16
+
+### Fixed
+
+* Update translation template.
+* Various fix to make rmlint ready to be packaged in debian.
+
+### Added
+
+* Output of rmlint.sh uses a colored prefix now.
 
 ## [2.4.5 Myopic Micrathene Bugfixes] -- 2016-12-12
 

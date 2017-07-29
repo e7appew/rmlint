@@ -16,8 +16,8 @@
  *
  * Authors:
  *
- *  - Christopher <sahib> Pahl 2010-2015 (https://github.com/sahib)
- *  - Daniel <SeeSpotRun> T.   2014-2015 (https://github.com/SeeSpotRun)
+ *  - Christopher <sahib> Pahl 2010-2017 (https://github.com/sahib)
+ *  - Daniel <SeeSpotRun> T.   2014-2017 (https://github.com/SeeSpotRun)
  *
  * Hosted on http://github.com/sahib/rmlint
  *
@@ -26,9 +26,9 @@
 #ifndef RM_OUTPUTS_H
 #define RM_OUTPUTS_H
 
+#include <glib.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <glib.h>
 
 #include "file.h"
 #include "session.h"
@@ -56,6 +56,7 @@ typedef struct RmFmtTable {
     GHashTable *handler_to_file;
     GHashTable *handler_set;
     GHashTable *config;
+    GQueue *handler_order;
     GRecMutex state_mtx;
     RmSession *session;
 
@@ -93,6 +94,11 @@ typedef struct RmFmtHandler {
      * first write(). Used for lazy init.
      */
     bool was_initialized;
+
+    /* Set to true (prior to calling head) if
+     * the file of this handler already existed
+     * on disk. */
+    bool file_existed_already;
 
     /* Callbacks, might be NULL */
     RmFmtHeadCallback head;

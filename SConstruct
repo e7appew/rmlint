@@ -7,7 +7,9 @@ import glob
 import subprocess
 import platform
 
+import SCons
 import SCons.Conftest as tests
+from SCons.Script.SConscript import SConsEnvironment
 
 pkg_config = os.getenv('PKG_CONFIG') or 'pkg-config'
 
@@ -82,6 +84,17 @@ def check_git_rev(context):
     conf.env['gitrev'] = rev
     context.Result(rev)
     return rev
+
+
+def check_sysmacro_h(context):
+    rc = 1
+    if rc and tests.CheckHeader(context, 'sys/sysmacros.h'):
+        rc = 0
+
+    conf.env['HAVE_SYSMACROS_H'] = rc
+    context.did_show_result = True
+    context.Result(rc)
+    return rc
 
 
 def check_libelf(context):
@@ -512,7 +525,8 @@ conf = Configure(env, custom_tests={
     'check_linux_limits': check_linux_limits,
     'check_btrfs_h': check_btrfs_h,
     'check_uname': check_uname,
-    'check_cygwin': check_cygwin
+    'check_cygwin': check_cygwin,
+    'check_sysmacro_h': check_sysmacro_h
 })
 
 if not conf.CheckCC():
@@ -605,6 +619,7 @@ conf.env.Append(CFLAGS=[
     '-Wmissing-include-dirs',
     '-Wuninitialized',
     '-Wstrict-prototypes',
+    '-Wno-implicit-fallthrough'
 ])
 
 env.ParseConfig(pkg_config + ' --cflags --libs ' + ' '.join(packages))
@@ -625,9 +640,25 @@ conf.check_posix_fadvise()
 conf.check_faccessat()
 conf.check_btrfs_h()
 conf.check_uname()
+conf.check_sysmacro_h()
 
 if conf.env['HAVE_LIBELF']:
     conf.env.Append(_LIBFLAGS=['-lelf'])
+
+SConsEnvironment.Chmod = SCons.Action.ActionFactory(
+    os.chmod,
+    lambda dest, mode: 'Chmod("%s", 0%o)' % (dest, mode)
+)
+
+
+def InstallPerm(env, dest, files, perm):
+    obj = env.Install(dest, files)
+    for i in obj:
+        env.AddPostAction(i, env.Chmod(str(i), perm))
+    return dest
+
+# put this function "in" scons
+SConsEnvironment.InstallPerm = InstallPerm
 
 # Your extra checks here
 env = conf.Finish()

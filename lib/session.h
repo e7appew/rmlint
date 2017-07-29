@@ -16,8 +16,8 @@
 *
 ** Authors:
  *
- *  - Christopher <sahib> Pahl 2010-2015 (https://github.com/sahib)
- *  - Daniel <SeeSpotRun> T.   2014-2015 (https://github.com/SeeSpotRun)
+ *  - Christopher <sahib> Pahl 2010-2017 (https://github.com/sahib)
+ *  - Daniel <SeeSpotRun> T.   2014-2017 (https://github.com/SeeSpotRun)
  *
 ** Hosted on http://github.com/sahib/rmlint
 *
@@ -26,10 +26,10 @@
 #ifndef RM_SESSION_H
 #define RM_SESSION_H
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdbool.h>
 #include <glib.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /* Needed for RmTreeMerger */
 #include "treemerge.h"
@@ -95,6 +95,13 @@ typedef struct RmSession {
     RmOff dup_group_counter;
     RmOff other_lint_cnt;
 
+    RmOff duplicate_bytes;
+    RmOff unique_bytes;
+    RmOff original_bytes;
+    RmOff shred_bytes_read;
+
+    GTimer *timer_since_proc_start;
+
     /* flag indicating if rmlint was aborted early */
     volatile gint aborted;
 
@@ -128,11 +135,12 @@ typedef struct RmSession {
     /* true once traverse finished running */
     bool traverse_finished;
 
-    /* List of path to json files that should be re-outputted. */
-    bool do_replay;
-
     /* Version of the linux kernel (0 on other operating systems) */
     int kernel_version[2];
+
+	/*  When run with --equal this holds the exit code for rmlint
+	 *  (the exit code is determined by the _equal formatter) */
+	int equal_exit_code;
 } RmSession;
 
 /**

@@ -16,17 +16,17 @@
  *
  * Authors:
  *
- *  - Christopher <sahib> Pahl 2010-2015 (https://github.com/sahib)
- *  - Daniel <SeeSpotRun> T.   2014-2015 (https://github.com/SeeSpotRun)
+ *  - Christopher <sahib> Pahl 2010-2017 (https://github.com/sahib)
+ *  - Daniel <SeeSpotRun> T.   2014-2017 (https://github.com/SeeSpotRun)
  *
  * Hosted on http://github.com/sahib/rmlint
  *
  */
 
 #include <ctype.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #include "file.h"
 #include "formats.h"
@@ -103,6 +103,8 @@ RmFmtTable *rm_fmt_open(RmSession *session) {
     self->config = g_hash_table_new_full(g_str_hash, g_str_equal, g_free,
                                          (GDestroyNotify)g_hash_table_unref);
 
+    self->handler_order = g_queue_new();
+
     self->session = session;
     g_queue_init(&self->groups);
     g_rec_mutex_init(&self->state_mtx);
@@ -140,6 +142,12 @@ RmFmtTable *rm_fmt_open(RmSession *session) {
     extern RmFmtHandler *NULL_HANDLER;
     rm_fmt_register(self, NULL_HANDLER);
 
+    extern RmFmtHandler *STATS_HANDLER;
+    rm_fmt_register(self, STATS_HANDLER);
+
+    extern RmFmtHandler *EQUAL_HANDLER;
+    rm_fmt_register(self, EQUAL_HANDLER);
+
     return self;
 }
 
@@ -175,6 +183,7 @@ void rm_fmt_clear(RmFmtTable *self) {
     g_hash_table_remove_all(self->handler_to_file);
     g_hash_table_remove_all(self->path_to_handler);
     g_hash_table_remove_all(self->config);
+    g_queue_clear(self->handler_order);
 }
 
 void rm_fmt_register(RmFmtTable *self, RmFmtHandler *handler) {
@@ -182,13 +191,12 @@ void rm_fmt_register(RmFmtTable *self, RmFmtHandler *handler) {
     g_mutex_init(&handler->print_mtx);
 }
 
-#define RM_FMT_FOR_EACH_HANDLER(self)                     \
-    FILE *file = NULL;                                    \
-    RmFmtHandler *handler = NULL;                         \
-                                                          \
-    GHashTableIter iter;                                  \
-    g_hash_table_iter_init(&iter, self->handler_to_file); \
-    while(g_hash_table_iter_next(&iter, (gpointer *)&handler, (gpointer *)&file))
+#define RM_FMT_FOR_EACH_HANDLER_BEGIN(self)                                 \
+    for(GList *iter = self->handler_order->head; iter; iter = iter->next) { \
+        RmFmtHandler *handler = iter->data;                                 \
+        FILE *file = g_hash_table_lookup(self->handler_to_file, handler);
+
+#define RM_FMT_FOR_EACH_HANDLER_END }
 
 #define RM_FMT_CALLBACK(func, ...)                               \
     if(func) {                                                   \
@@ -217,15 +225,23 @@ bool rm_fmt_add(RmFmtTable *self, const char *handler_name, const char *path) {
     FILE *file_handle = NULL;
     bool needs_full_path = false;
 
+    bool file_existed_already = false;
     if(g_strcmp0(path, "stdout") == 0) {
         file_handle = stdout;
+        file_existed_already = true;
     } else if(g_strcmp0(path, "stderr") == 0) {
         file_handle = stderr;
+        file_existed_already = true;
     } else if(g_strcmp0(path, "stdin") == 0) {
         /* I bet someone finds a use for this :-) */
         file_handle = stdin;
+        file_existed_already = true;
     } else {
         needs_full_path = true;
+        if(access(path, F_OK) == 0) {
+            file_existed_already = true;
+        }
+
         file_handle = fopen(path, "w");
     }
 
@@ -241,42 +257,50 @@ bool rm_fmt_add(RmFmtTable *self, const char *handler_name, const char *path) {
     memcpy(new_handler_copy, new_handler, new_handler->size);
     g_mutex_init(&new_handler->print_mtx);
 
+    new_handler_copy->file_existed_already = file_existed_already;
+
     if(needs_full_path == false) {
         new_handler_copy->path = g_strdup(path);
     } else {
-        new_handler_copy->path = realpath(path, NULL);
+        /* See this issue for more information:
+         * https://github.com/sahib/rmlint/issues/212
+         *
+         * Anonymous pipes will fail realpath(), this means that actually
+         * broken paths may fail later with this fix. The path for
+         * pipes is for example "/proc/self/fd/12".
+         * */
+        char *full_path = realpath(path, NULL);
+        if(full_path != NULL) {
+            new_handler_copy->path = full_path;
+        } else {
+            new_handler_copy->path = g_strdup(path);
+        }
     }
 
     g_hash_table_insert(self->handler_to_file, new_handler_copy, file_handle);
     g_hash_table_insert(self->path_to_handler, new_handler_copy->path, new_handler);
     g_hash_table_add(self->handler_set, (char *)new_handler_copy->name);
+    g_queue_push_tail(self->handler_order, new_handler_copy);
 
     return true;
 }
 
 static void rm_fmt_write_impl(RmFile *result, RmFmtTable *self) {
-    RM_FMT_FOR_EACH_HANDLER(self) {
+    RM_FMT_FOR_EACH_HANDLER_BEGIN(self) {
         RM_FMT_CALLBACK(handler->elem, result);
     }
+    RM_FMT_FOR_EACH_HANDLER_END
 }
 
 static gint rm_fmt_rank_size(const RmFmtGroup *ga, const RmFmtGroup *gb) {
     RmFile *fa = ga->files.head->data;
     RmFile *fb = gb->files.head->data;
 
-    RmOff sa = fa->file_size * (ga->files.length - 1);
-    RmOff sb = fb->file_size * (gb->files.length - 1);
+    RmOff sa = fa->actual_file_size * (ga->files.length - 1);
+    RmOff sb = fb->actual_file_size * (gb->files.length - 1);
 
     /* Better do not compare big unsigneds via a - b... */
-    if(sa < sb) {
-        return -1;
-    }
-
-    if(sa > sb) {
-        return +1;
-    }
-
-    return 0;
+    return SIGN_DIFF(sa, sb);
 }
 
 static gint rm_fmt_rank(const RmFmtGroup *ga, const RmFmtGroup *gb, RmFmtTable *self) {
@@ -296,7 +320,7 @@ static gint rm_fmt_rank(const RmFmtGroup *ga, const RmFmtGroup *gb, RmFmtTable *
     }
 
     for(int i = 0; rank_order[i]; ++i) {
-        gint64 r = 0;
+        gint r = 0;
         switch(tolower((unsigned char)rank_order[i])) {
         case 's':
             r = rm_fmt_rank_size(ga, gb);
@@ -304,28 +328,21 @@ static gint rm_fmt_rank(const RmFmtGroup *ga, const RmFmtGroup *gb, RmFmtTable *
         case 'a':
             r = strcasecmp(fa->folder->basename, fb->folder->basename);
             break;
-        case 'm': {
-                gdouble diff = fa->mtime - fb->mtime;
-                if(FLOAT_IS_ZERO(diff)) {
-                    return 0;
-                }
-
-                r = diff;
-            }
+        case 'm':
+            r = FLOAT_SIGN_DIFF(fa->mtime, fb->mtime, MTIME_TOL);
             break;
         case 'p':
-            r = ((gint64)fa->path_index) - ((gint64)fb->path_index);
+            r = SIGN_DIFF(fa->path_index, fb->path_index);
             break;
         case 'n':
-            r = ((gint64)ga->files.length) - ((gint64)gb->files.length);
+            r = SIGN_DIFF(ga->files.length, gb->files.length);
             break;
         case 'o':
-            r = ga->index - gb->index;
+            r = SIGN_DIFF(ga->index, gb->index);
             break;
         }
 
         if(r != 0) {
-            r = CLAMP(r, -1, +1);
             return isupper((unsigned char)rank_order[i]) ? -r : r;
         }
     }
@@ -357,17 +374,19 @@ void rm_fmt_close(RmFmtTable *self) {
 
     g_queue_clear(&self->groups);
 
-    RM_FMT_FOR_EACH_HANDLER(self) {
+    RM_FMT_FOR_EACH_HANDLER_BEGIN(self) {
         RM_FMT_CALLBACK(handler->foot);
         fclose(file);
         g_mutex_clear(&handler->print_mtx);
     }
+    RM_FMT_FOR_EACH_HANDLER_END
 
     g_hash_table_unref(self->name_to_handler);
     g_hash_table_unref(self->handler_to_file);
     g_hash_table_unref(self->path_to_handler);
     g_hash_table_unref(self->config);
     g_hash_table_unref(self->handler_set);
+    g_queue_free(self->handler_order);
     g_rec_mutex_clear(&self->state_mtx);
     g_slice_free(RmFmtTable, self);
 }
@@ -402,9 +421,10 @@ void rm_fmt_unlock_state(RmFmtTable *self) {
 void rm_fmt_set_state(RmFmtTable *self, RmFmtProgressState state) {
     rm_fmt_lock_state(self);
     {
-        RM_FMT_FOR_EACH_HANDLER(self) {
+        RM_FMT_FOR_EACH_HANDLER_BEGIN(self) {
             RM_FMT_CALLBACK(handler->prog, state);
         }
+        RM_FMT_FOR_EACH_HANDLER_END
     }
     rm_fmt_unlock_state(self);
 }
@@ -455,10 +475,10 @@ bool rm_fmt_has_formatter(RmFmtTable *self, const char *name) {
 }
 
 bool rm_fmt_is_stream(_UNUSED RmFmtTable *self, RmFmtHandler *handler) {
-    if(0 || handler->path == NULL || strcmp(handler->path, "stdout") == 0 ||
+    if(handler->path == NULL || strcmp(handler->path, "stdout") == 0 ||
        strcmp(handler->path, "stderr") == 0 || strcmp(handler->path, "stdin") == 0) {
         return true;
     }
 
-    return (access(handler->path, W_OK) == -1);
+    return access(handler->path, W_OK) == -1;
 }

@@ -116,6 +116,31 @@ def test_deep_simple():
     assert len(data) == 2
 
 
+@with_setup(usual_setup_func, usual_teardown_func)
+def test_dirs_with_empty_files_only():
+    create_file('', 'a/empty')
+    create_file('', 'b/empty')
+    head, *data, footer = run_rmlint('-pp -D -S a -T df,dd --size 0')
+
+    assert len(data) == 2
+    assert data[0]['path'].endswith('a')
+    assert data[0]['type'] == "duplicate_dir"
+    assert data[1]['path'].endswith('b')
+    assert data[1]['type'] == "duplicate_dir"
+
+    head, *data, footer = run_rmlint('-pp -D -S a -T df,dd')
+    assert len(data) == 0
+
+    head, *data, footer = run_rmlint('-pp -D -S a --size 0')
+    assert len(data) == 2
+
+    data.sort(key=lambda elem: elem["path"])
+    assert data[0]['path'].endswith('a/empty')
+    assert data[0]['type'] == "emptyfile"
+    assert data[1]['path'].endswith('b/empty')
+    assert data[1]['type'] == "emptyfile"
+
+
 def create_nested(root, letters):
     summed = []
     for letter in letters:
@@ -154,9 +179,6 @@ def test_deep_full_twice():
     create_nested('deep_a', 'efgh')
     create_nested('deep_b', 'abcd')
     create_nested('deep_b', 'efgh')
-
-    # subprocess.call('tree ' + TESTDIR_NAME, shell=True)
-    # subprocess.call('./rmlint -S a -D ' + TESTDIR_NAME + '/deep_a ' + TESTDIR_NAME + '/deep_b', shell=True)
 
     head, *data, footer = run_rmlint(
         '-D -S a {t}/deep_a {t}/deep_b'.format(
@@ -270,60 +292,164 @@ def test_keepall_tagged():
     #
     # Make sure -k protects duplicate directories too,
     # when they're in a pref'd path.
-
     create_file('test', 'origs/folder/subfolder/file')
     create_file('test', 'origs/samefolder/subfolder/file')
     create_file('test', 'dups/folder/subfolder/file')
     create_file('test', 'dups/samefolder/subfolder/file')
+    create_file('abcd', 'unmatched/folder/subfolder/file')
+    create_file('abcd', 'unmatched/samefolder/subfolder/unmatched')
 
-    head, *data, footer = run_rmlint('-D -S a -k -m {d} // {o}'.format(
-        d=os.path.join(TESTDIR_NAME, 'dups'),
-        o=os.path.join(TESTDIR_NAME, 'origs')
-    ))
+    parentdir = TESTDIR_NAME
+    dupedir = os.path.join(TESTDIR_NAME, 'dups')
+    origdir = os.path.join(TESTDIR_NAME, 'origs')
+    origsubdir = os.path.join(origdir, 'folder')
+    unmatcheddir = os.path.join(TESTDIR_NAME, 'unmatched')
 
-    assert len(data) == 4
-    assert footer['total_files'] == 8
+    def do_test(km_opts, untagged_path, tagged_path):
+        options = '-D -S Ap {maybe_km} {untagged} // {tagged}'.format(
+                maybe_km = km_opts,
+                untagged = untagged_path,
+                tagged = tagged_path)
+        return run_rmlint(options, use_default_dir=False)
+
+
+    ### test 1: simple -km test
+    head, *data, footer = do_test('-k -m', dupedir, origdir)
+    assert len(data) >= 2
+    assert footer['total_files'] == 4
     assert footer['duplicates'] == 2
     assert footer['duplicate_sets'] == 1
 
-    assert data[0]['path'].endswith('origs')
+    assert data[0]['path'].endswith(origdir)
     assert data[0]['is_original']
 
-    assert data[1]['path'].endswith('dups')
+    assert data[1]['path'].endswith(dupedir)
     assert not data[1]['is_original']
 
-    assert data[2]['path'].endswith('origs/folder')
-    assert data[2]['is_original']
+    ### test 2: -km test with tagged originals dir nested under untagged dir
+    # Files in origdir are traversed as both untagged (as parentdir/origs) and
+    # tagged (as origdir) but the tagged traversal should take precedence
+    # during preprocessing path double removal.  Therefore should give same
+    # result as previous, except for total file count.
+    head, *data, footer = do_test('-k -m', parentdir, origdir)
 
-    assert data[3]['path'].endswith('origs/samefolder')
-    assert data[3]['is_original']
+    assert len(data) >= 2
+    assert footer['duplicates'] == 2
+    assert footer['duplicate_sets'] == 1
+
+    assert data[0]['path'].endswith(origdir)
+    assert data[0]['is_original']
+
+    assert data[1]['path'].endswith(dupedir)
+    assert not data[1]['is_original']
+
+    ### test 3: tag just part of a nested originals dir
+    head, *data, footer = do_test('-k -m', parentdir, origsubdir)
+    assert len(data) == 4
+    assert footer['duplicates'] == 3
+    assert footer['duplicate_sets'] == 1
+
+    ###  test 4: test that tagging takes precedence over -S Ap option
+    head, *data, footer = do_test('', dupedir, origdir)
+    assert len(data) == 4
+    assert footer['total_files'] == 4
+    assert footer['duplicates'] == 3
+    assert footer['duplicate_sets'] == 1
+
+    assert data[0]['path'].endswith(origdir)
+    assert data[0]['is_original']
+
+    assert data[1]['path'].endswith(dupedir)
+    assert not data[1]['is_original']
+
+    ### test 5: test self-duplicates in untagged dir are preserved by -m option
+    head, *data, footer = do_test('-k -m', unmatcheddir, origdir)
+    # unmatcheddir contains self-duplicates but is protected by -m
+    # -o pretty (partial) output as at rmlint 82f433a:
+    # ==> In total 4 files, whereof 0 are duplicates in 0 groups.
+
+    assert len(data) == 0
+    assert footer['total_files'] == 4
+    assert footer['duplicates'] == 0
+    assert footer['duplicate_sets'] == 0
+
+    ### test 6: simple -KM test
+    head, *data, footer = do_test('-K -M', origdir, dupedir)
+    assert len(data) >= 2
+    assert footer['total_files'] == 4
+    assert footer['duplicates'] == 2
+    assert footer['duplicate_sets'] == 1
+
+    assert data[0]['path'].endswith(origdir)
+    assert data[0]['is_original']
+
+    assert data[1]['path'].endswith(dupedir)
+    assert not data[1]['is_original']
+
+    ### test 7: -KM test with tagged duplicates dir nested under untagged dir
+    # Files in origdir are traversed as both untagged (as parentdir/origs) and
+    # tagged (as origdir) but the tagged traversal should take precedence
+    # during preprocessing path double removal.  Therefore should give same
+    # result as previous, except for total file count.
+
+    head, *data, footer = do_test('-K -M', parentdir, dupedir)
+    assert len(data) >= 2
+    assert footer['duplicates'] == 2
+    assert footer['duplicate_sets'] == 1
+
+    assert data[0]['path'].endswith(origdir)
+    assert data[0]['is_original']
+
+    assert data[1]['path'].endswith(dupedir)
+    assert not data[1]['is_original']
+
+    ### test 8: test self-duplicates in untagged dir are preserved by -m option
+    # unmatcheddir contains self-duplicates but is protected by -M
+    # -o pretty (partial) output as at rmlint 82f433a:
+    # ==> In total 4 files, whereof 0 are duplicates in 0 groups.
+    head, *data, footer = do_test('-K -M', origdir, unmatcheddir)
+
+    assert len(data) == 0
+    assert footer['total_files'] == 4
+    assert footer['duplicates'] == 0
+    assert footer['duplicate_sets'] == 0
 
 
 @with_setup(usual_setup_func, usual_teardown_func)
-def test_keepall_untagged():
-    create_file('test', 'origs/folder/subfolder/file')
-    create_file('test', 'origs/samefolder/subfolder/file')
-    create_file('test', 'dups/folder/subfolder/file')
-    create_file('test', 'dups/samefolder/subfolder/file')
+def test_equal_content_different_layout():
+    # Different duplicates in different subdirs.
+    create_file('xxx', "tree-a/sub2/x")
+    create_file('yyy', "tree-a/sub1/y")
 
-    head, *data, footer = run_rmlint('-D -S a -K -m {d} // {o}'.format(
-        d=os.path.join(TESTDIR_NAME, 'dups'),
-        o=os.path.join(TESTDIR_NAME, 'origs')
-    ))
+    # Same files but on top level.
+    create_file('xxx', "tree-b/x")
+    create_file('yyy', "tree-b/y")
 
-    assert len(data) == 4
-    assert footer['total_files'] == 8
-    assert footer['duplicates'] == 2
-    assert footer['duplicate_sets'] == 1
+    head, *data, footer = run_rmlint('-pp -D --rank-by a')
 
-    assert data[0]['path'].endswith('dups')
-    assert data[0]['is_original']
+    assert data[0]["path"].endswith("tree-a")
+    assert data[0]["is_original"] is True
+    assert data[1]["path"].endswith("tree-b")
+    assert data[1]["is_original"] is False
 
-    assert data[1]['path'].endswith('origs')
-    assert not data[1]['is_original']
+    # Now, try to honour the layout
+    head, *data, footer = run_rmlint('-pp -Dj --rank-by a')
+    for point in data:
+        assert point["type"] == "duplicate_file"
 
-    assert data[2]['path'].endswith('dups/folder')
-    assert data[2]['is_original']
 
-    assert data[3]['path'].endswith('dups/samefolder')
-    assert data[3]['is_original']
+@with_setup(usual_setup_func, usual_teardown_func)
+def test_nested_content_with_same_layout():
+    create_nested('deep', 'xyzabc')
+    create_nested('deep', 'uvwabc')
+
+    head, *data, footer = run_rmlint('-Dj --rank-by a')
+
+    assert len(data) == 10
+    assert data[0]["path"].endswith("deep/u/v/w")
+    assert data[1]["path"].endswith("deep/x/y/z")
+
+    # No need to test again what the functions above already test,
+    # just check if those are duplicate files as expected.
+    for point in data[2:]:
+        assert point["type"] == "duplicate_file"

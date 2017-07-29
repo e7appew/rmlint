@@ -13,7 +13,6 @@ import shutil
 import shlex
 import subprocess
 
-USE_VALGRIND = True
 TESTDIR_NAME = os.getenv('RM_TS_DIR') or '/tmp/rmlint-unit-testdir'
 
 def runs_as_root():
@@ -65,7 +64,7 @@ def has_feature(feature):
     ).decode('utf-8')
 
 
-def run_rmlint_once(*args, dir_suffix=None, use_default_dir=True, outputs=None):
+def run_rmlint_once(*args, dir_suffix=None, use_default_dir=True, outputs=None, directly_return_output=False, use_shell=False):
     if use_default_dir:
         if dir_suffix:
             target_dir = os.path.join(TESTDIR_NAME, dir_suffix)
@@ -79,7 +78,9 @@ def run_rmlint_once(*args, dir_suffix=None, use_default_dir=True, outputs=None):
             'G_DEBUG': 'gc-friendly',
             'G_SLICE': 'always-malloc'
         }
-        cmd = [which('valgrind'), '--show-possibly-lost=no', '-q']
+        cmd = [which('valgrind'), '--error-exitcode=1', '-q']
+        if get_env_flag('RM_TS_CHECK_LEAKS'):
+            cmd.extend( ['--leak-check=full', '--show-leak-kinds=definite', '--errors-for-leak-kinds=definite'] )
     elif get_env_flag('RM_TS_USE_GDB'):
         env, cmd = {}, ['/usr/bin/gdb', '-batch', '--silent', '-ex=run', '-ex=thread apply all bt', '-ex=quit', '--args']
     else:
@@ -87,8 +88,9 @@ def run_rmlint_once(*args, dir_suffix=None, use_default_dir=True, outputs=None):
 
     cmd += [
         './rmlint', target_dir, '-V',
+    ] + shlex.split(' '.join(args)) + [
         '-o', 'json:/tmp/out.json', '-c', 'json:oneline'
-    ] + shlex.split(' '.join(args))
+    ]
 
     for idx, output in enumerate(outputs or []):
         cmd.append('-o')
@@ -100,17 +102,27 @@ def run_rmlint_once(*args, dir_suffix=None, use_default_dir=True, outputs=None):
     cmd = list(filter(None, cmd))
 
     if get_env_flag('RM_TS_PRINT_CMD'):
-        print('Run:', ' '.join(cmd))
+        print('Running cmd from `{cwd}`: {cmd}'.format(
+            cwd=os.getcwd(),
+            cmd=' '.join(cmd)
+        ))
 
     if get_env_flag('RM_TS_SLEEP'):
         print('Waiting for 1000 seconds.')
         time.sleep(1000)
 
-    output = subprocess.check_output(cmd, shell=False, env=env)
+    if use_shell is True:
+        # Use /bin/bash, not /bin/sh
+        cmd = ["/bin/bash", "-c", " ".join(cmd)]
+
+    output = subprocess.check_output(cmd, env=env)
     if get_env_flag('RM_TS_USE_GDB'):
         print('==> START OF GDB OUTPUT <==')
         print(output.decode('utf-8'))
         print('==> END OF GDB OUTPUT <==')
+
+    if directly_return_output:
+        return output
 
     with open('/tmp/out.json', 'r') as f:
         json_data = json.loads(f.read())
@@ -192,7 +204,9 @@ def run_rmlint_pedantic(*args, **kwargs):
     cksum_types = [
         'paranoid', 'sha1', 'sha256', 'spooky', 'bastard', 'city',
         'md5', 'city256', 'city512', 'murmur', 'murmur256', 'murmur512',
-        'spooky32', 'spooky64', 'xxhash', 'farmhash'
+        'spooky32', 'spooky64', 'xxhash', 'farmhash',
+        'sha3-256', 'sha3-384', 'sha3-512',
+        'blake2s', 'blake2b', 'blake2sp', 'blake2bp',
     ]
 
     # Note: sha512 is supported on all system which have
@@ -205,12 +219,13 @@ def run_rmlint_pedantic(*args, **kwargs):
 
     data = None
 
-    output_len = len(kwargs['outputs']) if 'outputs' in kwargs else 0
+    output_len = len(kwargs.get('outputs', []))
 
     for option in options:
         new_data = run_rmlint_once(*(args + (option, )), **kwargs)
 
         data_skip, new_data_skip = data, new_data
+
         if output_len is not 0:
             if new_data:
                 new_data_skip = new_data[:-output_len]
@@ -221,7 +236,7 @@ def run_rmlint_pedantic(*args, **kwargs):
         # We cannot compare checksum in all cases.
         compare_checksum = not option.startswith('--algorithm=')
 
-        if data_skip is not None and not compare_json_docs(data_skip, new_data_skip, compare_checksum):
+        if data_skip is not None and not 'directly_return_output' in kwargs and not compare_json_docs(data_skip, new_data_skip, compare_checksum):
             pprint.pprint(data_skip)
             pprint.pprint(new_data_skip)
             raise AssertionError("Optimisation too optimized: " + option)
@@ -231,8 +246,8 @@ def run_rmlint_pedantic(*args, **kwargs):
     return data
 
 
-def run_rmlint(*args, **kwargs):
-    if get_env_flag('RM_TS_PEDANTIC'):
+def run_rmlint(*args, force_no_pendantic=False, **kwargs):
+    if get_env_flag('RM_TS_PEDANTIC') and force_no_pendantic is False:
         return run_rmlint_pedantic(*args, **kwargs)
     else:
         return run_rmlint_once(*args, **kwargs)
@@ -250,7 +265,7 @@ def create_link(path, target, symlink=False):
     )
 
 
-def create_file(data, name):
+def create_file(data, name, mtime=None):
     full_path = os.path.join(TESTDIR_NAME, name)
     if '/' in name:
         try:
@@ -260,6 +275,9 @@ def create_file(data, name):
 
     with open(full_path, 'w') as handle:
         handle.write(data)
+
+    if not mtime is None:
+        subprocess.call(['touch', '-m', '-d', str(mtime), full_path])
 
     return full_path
 
@@ -276,5 +294,8 @@ def usual_setup_func():
 
 def usual_teardown_func():
     if not keep_testdir():
-        shutil.rmtree(path=TESTDIR_NAME)
-
+        # Allow teardown to be called more than once:
+        try:
+            shutil.rmtree(path=TESTDIR_NAME)
+        except OSError:
+            pass
