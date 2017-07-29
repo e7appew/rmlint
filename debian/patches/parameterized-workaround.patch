@@ -1,0 +1,31 @@
+From: Carlos Maddela <e7appew@gmail.com>
+Date: Sun, 30 Jul 2017 03:33:12 +1000
+Subject: Fallback to deprecated nose_parameterized module
+
+Description: Fallback to deprecated nose_parameterized module,
+ since the generic parameterized module has not yet been packaged.
+Author: Carlos Maddela <e7appew@gmail.com>
+Forwarded: not-needed
+Last-Update: 2017-07-30
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+---
+ tests/test_formatters/test_sh.py | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/tests/test_formatters/test_sh.py b/tests/test_formatters/test_sh.py
+index 04f1e14..f7acfd2 100644
+--- a/tests/test_formatters/test_sh.py
++++ b/tests/test_formatters/test_sh.py
+@@ -5,7 +5,10 @@ from tests.utils import *
+ 
+ import subprocess
+ 
+-from parameterized import parameterized
++try:
++    from parameterized import parameterized
++except ImportError:
++    from nose_parameterized import parameterized
+ 
+ 
+ def run_shell_script(shell, sh_path, *args):

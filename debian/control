@@ -10,7 +10,7 @@ Build-Depends: debhelper (>= 10),
                libjson-glib-dev,
                pkg-config (>= 0.15),
                python3,
-               python3-nose,
+               python3-nose-parameterized,
                python3-sphinx,
                python3-sphinx-bootstrap-theme (>= 0.4.3),
                scons

@@ -3,6 +3,7 @@ rmlint (2.6.1-1) UNRELEASED; urgency=medium
   * New upstream version [2.6.1].
   * Rebase patch queue and drop changes already applied upstream.
   * Indicate compliance with latest standards version [4.0.0].
+  * Make 'parameterized' module available to 'nose' tests.
 
  -- Carlos Maddela <e7appew@gmail.com>  Sun, 30 Jul 2017 02:29:00 +1000
 
