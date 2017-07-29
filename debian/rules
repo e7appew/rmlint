@@ -26,10 +26,9 @@ COMMON_SCONS_OPTS := \
 	$(if $(filter $(DH_VERBOSE),1),VERBOSE=1) \
 	$(if $(findstring debug,$(DBO)),DEBUG=1)
 
-# Fudge build date using SOURCE_DATE_EPOCH or last changelog date
-# for build reproducibility.
-DATE := $(if $(filter $(origin SOURCE_DATE_EPOCH),undefined), \
-	$(shell dpkg-parsechangelog -S Date),@$(SOURCE_DATE_EPOCH))
+# Fudge build date using SOURCE_DATE_EPOCH for build reproducibility.
+include /usr/share/dpkg/pkg-info.mk
+DATE := @$(SOURCE_DATE_EPOCH)
 export BUILD_DATE := $(shell date -u -d '$(DATE)' +'%b %d %Y')
 export BUILD_TIME := $(shell date -u -d '$(DATE)' +%T)
 

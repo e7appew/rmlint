@@ -7,6 +7,7 @@ rmlint (2.6.1-1) UNRELEASED; urgency=medium
   * Simplify (and hopefully make adaptable to future changes in host
     names and version numbers) the sed rules for patching HTML docs.
   * Fix man page typos.
+  * Avoid calling dpkg-parsechangelog directly from debian/rules.
 
  -- Carlos Maddela <e7appew@gmail.com>  Sun, 30 Jul 2017 02:29:00 +1000
 
