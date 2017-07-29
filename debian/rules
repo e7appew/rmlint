@@ -63,7 +63,7 @@ override_dh_auto_build-indep:
 	scons $(COMMON_SCONS_OPTS) docs
 	rm -rf docs/_build/html/_static/bootstrap-?.?.? docs/_build/html/_static/bootswatch-?.?.?
 	sed -i \
-		-e 's@http[s]\?://cdn.mathjax.org/mathjax/latest/\(MathJax.js\)@file:///usr/share/javascript/mathjax/\1@g' \
+		-e 's@http[s]\?://.\+/mathjax/[^/]\+/[Mm]ath[Jj]ax.js@file:///usr/share/javascript/mathjax/MathJax.js@g' \
 		-e 's@\(bootstrap\|bootswatch\)-[[:digit:]]\(\.[[:digit:]]\)\{2\}@\1@g' \
 		docs/_build/html/*.html
 
