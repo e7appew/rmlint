@@ -1,3 +1,10 @@
+rmlint (2.6.1-1) UNRELEASED; urgency=medium
+
+  * New upstream version [2.6.1].
+  * Rebase patch queue and drop changes already applied upstream.
+
+ -- Carlos Maddela <e7appew@gmail.com>  Sun, 30 Jul 2017 02:29:00 +1000
+
 rmlint (2.4.6-2) unstable; urgency=medium
 
   * Fix missing dependencies in rmlint-gui package. (Closes: #855255)

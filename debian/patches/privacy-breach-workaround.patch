@@ -13,8 +13,8 @@ Last-Update: 2017-02-17
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 ---
  docs/gui.rst   |  2 +-
- docs/index.rst | 48 +++++-------------------------------------------
- 2 files changed, 6 insertions(+), 44 deletions(-)
+ docs/index.rst | 47 +++++------------------------------------------
+ 2 files changed, 6 insertions(+), 43 deletions(-)
 
 diff --git a/docs/gui.rst b/docs/gui.rst
 index db892ce..f6a2260 100644
@@ -30,12 +30,12 @@ index db892ce..f6a2260 100644
      frameborder="0" webkitallowfullscreen mozallowfullscreen
      allowfullscreen></iframe>
 diff --git a/docs/index.rst b/docs/index.rst
-index cb4ac6f..5af6afc 100644
+index 249490e..bd755e9 100644
 --- a/docs/index.rst
 +++ b/docs/index.rst
-@@ -41,45 +41,6 @@ to remove it. It is able to find:
- .. image:: _static/screenshot.png
-    :align: center
+@@ -35,44 +35,6 @@ to remove it. It is able to find:
+    + Can handle very large file sets (millions of files).
+    + Colorful progressbar. (😃)
  
 -----
 -
@@ -75,11 +75,10 @@ index cb4ac6f..5af6afc 100644
 -.. raw:: html
 -
 -    </center>
--
+ 
  User manual
  -----------
- 
-@@ -103,7 +64,7 @@ Since version ``2.4.0`` we also feature an optional graphical user interface:
+@@ -97,7 +59,7 @@ Since version ``2.4.0`` we also feature an optional graphical user interface:
  .. raw:: html
  
     <center>
@@ -88,7 +87,7 @@ index cb4ac6f..5af6afc 100644
      height="450"
      frameborder="0" webkitallowfullscreen mozallowfullscreen
      allowfullscreen></iframe>
-@@ -172,10 +133,11 @@ Donations
+@@ -166,10 +128,11 @@ Donations
  If you think rmlint saved [*]_ you some serious time and/or space, you might
  consider a donation. You can donate either via *Flattr* or via *PayPal*:
  
@@ -101,7 +100,7 @@ index cb4ac6f..5af6afc 100644
  
  .. raw:: html
  
-@@ -184,8 +146,8 @@ consider a donation. You can donate either via *Flattr* or via *PayPal*:
+@@ -178,8 +141,8 @@ consider a donation. You can donate either via *Flattr* or via *PayPal*:
         <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
             <input type="hidden" name="cmd" value="_s-xclick">
             <input type="hidden" name="hosted_button_id" value="JXCXKRMS8EDVC">

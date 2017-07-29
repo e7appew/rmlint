@@ -19,10 +19,10 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
  4 files changed, 16 insertions(+), 5 deletions(-)
 
 diff --git a/SConstruct b/SConstruct
-index e5469ee..b486c2d 100755
+index f8e2b10..0688b72 100755
 --- a/SConstruct
 +++ b/SConstruct
-@@ -66,13 +66,14 @@ def check_pkg(context, name, varname, required=True):
+@@ -68,13 +68,14 @@ def check_pkg(context, name, varname, required=True):
  
  
  def check_git_rev(context):
@@ -40,8 +40,8 @@ index e5469ee..b486c2d 100755
      except AttributeError:
          # Patch for some special sandbox permission problems.
          # See https://github.com/sahib/rmlint/issues/143#issuecomment-139929733
-@@ -630,6 +631,12 @@ if conf.env['HAVE_LIBELF']:
-     conf.env.Append(_LIBFLAGS=['-lelf'])
+@@ -661,6 +662,12 @@ def InstallPerm(env, dest, files, perm):
+ SConsEnvironment.InstallPerm = InstallPerm
  
  # Your extra checks here
 +
@@ -54,10 +54,10 @@ index e5469ee..b486c2d 100755
  
  library = SConscript('lib/SConscript')
 diff --git a/lib/SConscript b/lib/SConscript
-index 4298941..c4bd5bf 100644
+index 8412b40..ffa6252 100644
 --- a/lib/SConscript
 +++ b/lib/SConscript
-@@ -39,7 +39,9 @@ def build_config_template(target, source, env):
+@@ -40,7 +40,9 @@ def build_config_template(target, source, env):
              VERSION_MINOR=VERSION_MINOR,
              VERSION_PATCH=VERSION_PATCH,
              VERSION_NAME=VERSION_NAME,
@@ -69,7 +69,7 @@ index 4298941..c4bd5bf 100644
  
          handle.write(config_h)
 diff --git a/lib/cmdline.c b/lib/cmdline.c
-index ba189f2..75d0bf0 100644
+index 2e43c3e..eac83a6 100644
 --- a/lib/cmdline.c
 +++ b/lib/cmdline.c
 @@ -57,7 +57,7 @@
@@ -82,10 +82,10 @@ index ba189f2..75d0bf0 100644
      /* Make a list of all supported features from the macros in config.h */
      /* clang-format off */
 diff --git a/lib/config.h.in b/lib/config.h.in
-index f9bb987..fb94f19 100644
+index 7c6aafa..c7934c2 100644
 --- a/lib/config.h.in
 +++ b/lib/config.h.in
-@@ -28,6 +28,8 @@
+@@ -29,6 +29,8 @@
  #define RM_VERSION_PATCH {VERSION_PATCH}
  #define RM_VERSION_NAME  "{VERSION_NAME}"
  #define RM_VERSION_GIT_REVISION "{VERSION_GIT_REVISION}"
