@@ -4,6 +4,11 @@ Gentle Guide to ``rmlint``
 
 Welcome to the Tutorial of ``rmlint``.
 
+.. image:: _static/shredder.svg
+   :width: 45%
+   :align: center
+
+
 We use a few terms that might not be obvious to you at first,
 so we gonna explain them to you here.
 
@@ -65,6 +70,11 @@ long list of files. You can do this easily with the ``-g`` switch:
 
     $ rmlint -g
 
+It will look like this:
+
+.. image:: _static/screenshot.png
+   :align: center
+
 Filtering input files
 ---------------------
 
@@ -91,14 +101,15 @@ Limit files by size using ``--size``
    $ rmlint -s 4K
    # only check files smaller than 1234 bytes:
    $ rmlint -s 0-1234
+   # Find empty files and handle them as duplicates:
+   $ rmlint -T df --size 0-1
 
 Valid units include:
 
 |  K,M,G,T,P for powers of 1000
 |  KB, MB, GB etc for powers of 1024
 
-If no units are given, ``rmlint`` assumes bytes.
-
+If no units are given, ``rmlint`` will assume bytes.
 
 Limit duplicate matching according to basename
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -436,11 +447,11 @@ functions are not totally random, so the collision probability is slightly highe
 Due to the "birthday paradox", collision starts to become a real risk if you have
 more than about :math:`2^{80}` files of the same size.
 
-If you're wary, you might want to make a bit more paranoid than the default.
-By default the ``sha1`` hash algorithm is used, which we consider a good
-trade-off of speed and accuracy. ``rmlint``'s paranoia level can be easily
-inc/decreased using the ``-p`` (``--paranoid``)/ ``-P`` (``--less-paranoid``)
-option (which might be given twice each).
+If you're wary, you might want to make a bit more paranoid than the default. By
+default the ``blake2b`` (previously ``sha1`` was the default) hash algorithm is
+used, which we consider a good trade-off of speed and accuracy. ``rmlint``'s
+paranoia level can be easily inc/decreased using the ``-p`` (``--paranoid``)/
+``-P`` (``--less-paranoid``) option (which might be given twice each).
 
 Here's what they do in detail:
 

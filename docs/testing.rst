@@ -23,6 +23,7 @@ variables which are:
   sometimes ``tmpfs`` might therefore slow down your computer. By default
   ``/tmp`` will be used.
 - ``RM_TS_USE_VALGRIND``: Run each test inside of valgrind's memcheck. *(slow)*
+- ``RM_TS_CHECK_LEAKS``: Fail test if valgrind indicates (definite) memory leak.
 - ``RM_TS_USE_GDB``: Run tests inside of ``gdb``. Fatal signals will trigger a
   backtrace.
 - ``RM_TS_PEDANTIC``: Run each test several times with different optimization options
@@ -43,7 +44,7 @@ Before each release we call the testsuite (at least) like this:
 
 .. code-block:: bash
 
-   $ sudo RM_TS_USE_VALGRIND=1 RM_TS_PRINT_CMD=1 RM_TS_PEDANTIC=1 nosetests-3.4 -s -a '!slow' 
+   $ sudo RM_TS_USE_VALGRIND=1 RM_TS_PRINT_CMD=1 RM_TS_PEDANTIC=1 nosetests-3.4 -s -a '!slow !known_issue'
 
 The ``sudo`` here is there for executing some tests that need root access (like
 the creating of bad user and group ids). Most tests will work without.
@@ -58,7 +59,7 @@ were executed (and how often) by the testsuite. Here's a short quickstart using
 .. code-block:: bash
 
     $ CFLAGS="-fprofile-arcs -ftest-coverage" LDFLAGS="-fprofile-arcs -ftest-coverage" scons -j4 DEBUG=1
-    $ sudo RM_TS_USE_VALGRIND=1 RM_TS_PRINT_CMD=1 RM_TS_PEDANTIC=1 nosetests-3.4 -s -a '!slow'
+    $ sudo RM_TS_USE_VALGRIND=1 RM_TS_PRINT_CMD=1 RM_TS_PEDANTIC=1 nosetests-3.4 -s -a '!slow !known_issue'
     $ lcov --capture --directory . --output-file coverage.info
     $ genhtml coverage.info --output-directory out
 
@@ -122,3 +123,5 @@ Rules
     @with_setup(usual_setup_func, usual_teardown_func)
     def test_debian_support():
         assert random.choice([True, False]):
+
+* Unresolved issues can be marked with `known_issue` attribute to avoid failing automated travis testing

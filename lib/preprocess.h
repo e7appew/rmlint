@@ -16,8 +16,8 @@
 *
 ** Authors:
  *
- *  - Christopher <sahib> Pahl 2010-2015 (https://github.com/sahib)
- *  - Daniel <SeeSpotRun> T.   2014-2015 (https://github.com/SeeSpotRun)
+ *  - Christopher <sahib> Pahl 2010-2017 (https://github.com/sahib)
+ *  - Daniel <SeeSpotRun> T.   2014-2017 (https://github.com/SeeSpotRun)
  *
 ** Hosted on http://github.com/sahib/rmlint
 *
@@ -26,8 +26,8 @@
 #ifndef RM_PREPROCESS_H
 #define RM_PREPROCESS_H
 
-#include "session.h"
 #include "file.h"
+#include "session.h"
 
 /**
  * @brief Do some pre-processing (eg remove path doubles) and process "other lint".

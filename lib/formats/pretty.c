@@ -16,8 +16,8 @@
  *
  * Authors:
  *
- *  - Christopher <sahib> Pahl 2010-2015 (https://github.com/sahib)
- *  - Daniel <SeeSpotRun> T.   2014-2015 (https://github.com/SeeSpotRun)
+ *  - Christopher <sahib> Pahl 2010-2017 (https://github.com/sahib)
+ *  - Daniel <SeeSpotRun> T.   2014-2017 (https://github.com/SeeSpotRun)
  *
  * Hosted on http://github.com/sahib/rmlint
  *
@@ -84,7 +84,8 @@ typedef struct RmFmtHandlerPretty {
     int elems_written;
 } RmFmtHandlerProgress;
 
-static void rm_fmt_head(_UNUSED RmSession *session, RmFmtHandler *parent, _UNUSED FILE *out) {
+static void rm_fmt_head(_UNUSED RmSession *session, RmFmtHandler *parent,
+                        _UNUSED FILE *out) {
     RmFmtHandlerProgress *self = (RmFmtHandlerProgress *)parent;
 
     self->user = rm_util_get_username();

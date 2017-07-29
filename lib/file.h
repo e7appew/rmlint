@@ -16,8 +16,8 @@
 *
 * Authors:
 *
-*  - Christopher <sahib> Pahl 2010-2015 (https://github.com/sahib)
-*  - Daniel <SeeSpotRun> T.   2014-2015 (https://github.com/SeeSpotRun)
+*  - Christopher <sahib> Pahl 2010-2017 (https://github.com/sahib)
+*  - Daniel <SeeSpotRun> T.   2014-2017 (https://github.com/SeeSpotRun)
 *
 * Hosted on http://github.com/sahib/rmlint
 *
@@ -26,9 +26,9 @@
 #ifndef RM_FILE_H
 #define RM_FILE_H
 
-#include <sys/stat.h>
-#include <stdbool.h>
 #include <glib.h>
+#include <stdbool.h>
+#include <sys/stat.h>
 
 #include "cfg.h"
 #include "pathtricia.h"
@@ -159,7 +159,7 @@ typedef struct RmFile {
     /* True if this file, or at least one of its embedded hardlinks, are newer
      * than cfg->min_mtime
      */
-    bool is_new_or_has_new : 1;
+    bool is_new : 1;
 
     /* True if this file, or at least one its path's componennts, is a hidden
      * file. This excludes files above the directory rmlint was started on.
@@ -172,11 +172,6 @@ typedef struct RmFile {
      */
     bool free_digest : 1;
 
-    /* If true, the checksum of this file was read from the xattrs of the file.
-     * It was cached previously by rmlint on the disk.
-     */
-    bool has_ext_cksum : 1;
-
     /* If true, the file will be request to be pre-cached on the next read */
     bool fadvise_requested : 1;
 
@@ -186,25 +181,24 @@ typedef struct RmFile {
     /* Set to true if file belongs to a subvolume-capable filesystem eg btrfs */
     bool is_on_subvol_fs : 1;
 
-    /* If this file is the head of a hardlink cluster, the following structure
-     * contains the other hardlinked RmFile's.  This is used to avoid
-     * hashing every file within a hardlink set */
-    struct {
-        bool has_prefd : 1;
-        bool has_non_prefd : 1;
-        bool is_head : 1;
-        union {
-            GQueue *files;
-            struct RmFile *hardlink_head;
-        };
-    } hardlinks;
+    /* The pre-matched file cluster that this file belongs to (or NULL) */
+    GQueue *cluster;
+
+    /* pointer to hardlinks collection (or NULL); one list shared between hardlink twin
+     * set */
+    GQueue *hardlinks;
 
     /* The index of the path this file belongs to. */
     RmOff path_index;
 
-    /* Filesize in bytes
+    /* Filesize in bytes; this may be less than actual_file_size,
+     * since -q / -Q may limit this number.
      */
     RmOff file_size;
+
+    /* Filesize of a file when it was traversed by rmlint.
+     */
+    RmOff actual_file_size;
 
     /* How many bytes were already read.
     * (lower or equal file_size)
@@ -219,6 +213,11 @@ typedef struct RmFile {
      * with RmShredGroup
      */
     RmDigest *digest;
+
+    /* digest of this file read from file extended attributes (previously written by
+     * rmlint)
+     */
+    char *ext_cksum;
 
     /* Those are never used at the same time.
      * disk_offset is used during computation,
@@ -256,30 +255,72 @@ typedef struct RmFile {
 } RmFile;
 
 /* Defines a path variable containing the file's path */
-#define RM_DEFINE_PATH_IF_NEEDED(file, needed)            \
-    char file##_path[PATH_MAX];                           \
-    if(needed) {                                          \
-        rm_file_build_path((RmFile *)file, file##_path);  \
+#define RM_DEFINE_PATH_IF_NEEDED(file, needed)           \
+    char file##_path[PATH_MAX];                          \
+    if(needed) {                                         \
+        rm_file_build_path((RmFile *)file, file##_path); \
     }
 
 /* Fill path always */
 #define RM_DEFINE_PATH(file) RM_DEFINE_PATH_IF_NEEDED(file, true)
 
-#define RM_IS_BUNDLED_HARDLINK(file) \
-    (file->hardlinks.hardlink_head && !file->hardlinks.is_head)
+#define RM_FILE_HARDLINK_HEAD(file) \
+    (file->hardlinks ? (RmFile *)file->hardlinks->head->data : NULL)
+
+#define RM_FILE_IS_CLUSTERED(file) (file->cluster && file != file->cluster->head->data)
+
+/* for lint counting, we only count the first hardlink: */
+#define RM_FILE_IS_HARDLINK(file) (file->hardlinks && file != RM_FILE_HARDLINK_HEAD(file))
+
+#define RM_FILE_HARDLINK_COUNT(file) ((file->hardlinks) ? file->hardlinks->length - 1 : 0)
+
+#define RM_FILE_HAS_HARDLINKS(file) \
+    (file->hardlinks && file == RM_FILE_HARDLINK_HEAD(file))
+
+#define RM_FILE_CLUSTER_HEAD(file) \
+    ((file->cluster) ? (RmFile *)file->cluster->head->data : NULL)
+#define RM_FILE_INODE_COUNT(file) ((file->cluster) ? file->cluster->length : 1)
+
+#define RM_FILE_HAS_PREFD(file) (!!rm_file_n_prefd(file))
+#define RM_FILE_HAS_NPREFD(file) (!!rm_file_n_nprefd(file))
 
 /**
  * @brief Create a new RmFile handle.
  */
-RmFile *rm_file_new(struct RmSession *session, const char *path,
-                    RmStat *statp, RmLintType type, bool is_ppath, unsigned pnum,
-                    short depth);
+RmFile *rm_file_new(struct RmSession *session, const char *path, RmStat *statp,
+                    RmLintType type, bool is_ppath, unsigned pnum, short depth);
 
 /**
  * @brief Deallocate the memory allocated by rm_file_new.
  * @note does not deallocate file->digest since this is handled by shredder.c
  */
 void rm_file_destroy(RmFile *file);
+
+/**
+ * @brief add link to head's hardlinks (create hardlinks queue if necessary)
+ */
+void rm_file_hardlink_add(RmFile *head, RmFile *link);
+
+/**
+ * @brief add guest to host's cluster (create cluster if necessary)
+ */
+void rm_file_cluster_add(RmFile *host, RmFile *guest);
+
+void rm_file_cluster_remove(RmFile *file);
+
+/**
+ * @brief call func(file) for each clustered file in f including f
+ * retval: sum of returned values from func()
+ */
+gint rm_file_foreach(RmFile *f, RmRFunc func, gpointer user_data);
+
+/**
+ * @brief count number of files of various type including clustered files
+ */
+gint rm_file_n_files(RmFile *file);
+gint rm_file_n_new(RmFile *file);
+gint rm_file_n_prefd(RmFile *file);
+gint rm_file_n_nprefd(RmFile *file);
 
 /**
  * @brief Convert RmLintType to a human readable short string.
