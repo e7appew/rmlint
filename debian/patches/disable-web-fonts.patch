@@ -1,0 +1,97 @@
+From: Carlos Maddela <e7appew@gmail.com>
+Date: Sun, 30 Jul 2017 15:06:44 +1000
+Subject: Disable use of web fonts to avoid possible privacy breach issues.
+
+Description: Disable use of web fonts to avoid possible privacy breach issues.
+Author: Carlos Maddela <e7appew@gmil.com>
+Forwarded: not-needed
+Last-Update: 2017-07-30
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+---
+ docs/_static/custom.css     | 55 ---------------------------------------------
+ docs/_templates/layout.html | 13 -----------
+ 2 files changed, 68 deletions(-)
+ delete mode 100644 docs/_static/custom.css
+ delete mode 100644 docs/_templates/layout.html
+
+diff --git a/docs/_static/custom.css b/docs/_static/custom.css
+deleted file mode 100644
+index dc79380..0000000
+--- a/docs/_static/custom.css
++++ /dev/null
+@@ -1,55 +0,0 @@
+-h1 {
+-    font-family: Vollkorn;
+-    font-size: 32px;
+-    font-style: normal;
+-    font-variant: normal;
+-    font-weight: 400;
+-    line-height: 32px;
+-}
+-
+-h2 {
+-    font-family: Vollkorn;
+-    font-size: 28px;
+-    font-style: normal;
+-    font-variant: normal;
+-    font-weight: 400;
+-    line-height: 23px;
+-}
+-
+-h3 {
+-    font-family: Vollkorn;
+-    font-size: 24px;
+-    font-style: normal;
+-    font-variant: normal;
+-    font-weight: 400;
+-    line-height: 23px;
+-}
+-p, li {
+-    font-family: Vollkorn;
+-    font-size: 16px;
+-    font-style: normal;
+-    font-variant: normal;
+-    font-weight: 400;
+-    line-height: 23px;
+-}
+-
+-li {
+-    font-size: 12px;
+-}
+-
+-blockquote {
+-    font-family: Vollkorn;
+-    font-size: 12px;
+-    font-style: normal;
+-    font-variant: normal;
+-    font-weight: 400;
+-    line-height: 23px;
+-}
+-pre {
+-    font-family: Vollkorn;
+-    font-size: 13px;
+-    font-style: normal;
+-    font-variant: normal;
+-    font-weight: 400;
+-    line-height: 23px;
+-}
+diff --git a/docs/_templates/layout.html b/docs/_templates/layout.html
+deleted file mode 100644
+index 9ccc21c..0000000
+--- a/docs/_templates/layout.html
++++ /dev/null
+@@ -1,13 +0,0 @@
+-{# Import the theme's layout. #}
+-{% extends "!layout.html" %}
+-
+-{% block header %}
+-<link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Vollkorn" /><link rel='stylesheet' href='//fonts.googleapis.com/css?family=Vollkorn' type='text/css' />
+-<link rel='stylesheet' href='//fonts.googleapis.com/css?family=Vollkorn' type='text/css' />
+-<link rel='stylesheet' href='//fonts.googleapis.com/css?family=Vollkorn' type='text/css' />
+-<link rel='stylesheet' href='//fonts.googleapis.com/css?family=Vollkorn' type='text/css' />
+-<link rel='stylesheet' href='//fonts.googleapis.com/css?family=Vollkorn' type='text/css' />
+-{% endblock %}
+-
+-{# Custom CSS overrides #}
+-{% set bootswatch_css_custom = ['_static/custom.css'] %}

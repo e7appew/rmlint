@@ -1,0 +1,32 @@
+From: Carlos Maddela <e7appew@gmail.com>
+Date: Sun, 30 Jul 2017 14:25:10 +1000
+Subject: Disable asciinema demo to avoid possible privacy breach issues.
+
+Description: Disable asciinema demo to avoid possible privacy breach issues.
+Author: Carlos Maddela <e7appew@gmail.com>
+Forwarded: not-needed
+Last-Update: 2017-07-30
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+---
+ docs/index.rst | 7 -------
+ 1 file changed, 7 deletions(-)
+
+diff --git a/docs/index.rst b/docs/index.rst
+index bd755e9..f4ba788 100644
+--- a/docs/index.rst
++++ b/docs/index.rst
+@@ -13,13 +13,6 @@ to remove it. It is able to find:
+    + Recursive empty directories.
+    + Files with broken user or group id.
+ 
+-.. raw:: html
+-
+-    <script type="text/javascript" src="https://asciinema.org/a/8leoh1nqxz7t5o3jkedkh4421.js" id="asciicast-8leoh1nqxz7t5o3jkedkh4421" async></script>
+-
+-|
+-
+-
+ **Key Features:**
+ 
+ .. hlist::
