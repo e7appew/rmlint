@@ -18,6 +18,7 @@ Standards-Version: 4.0.0
 Homepage: https://rmlint.readthedocs.io/
 Vcs-Git: https://anonscm.debian.org/git/collab-maint/rmlint.git
 Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/rmlint.git
+Testsuite: autopkgtest
 
 Package: rmlint
 Architecture: any

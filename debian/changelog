@@ -10,6 +10,7 @@ rmlint (2.6.1-1) UNRELEASED; urgency=medium
   * Avoid calling dpkg-parsechangelog directly from debian/rules.
   * Fix new privacy breach issues by disabling the asciinema demo
     and the use of web fonts.
+  * Add package test to prevent privacy breach issues in HTML docs.
 
  -- Carlos Maddela <e7appew@gmail.com>  Sun, 30 Jul 2017 02:29:00 +1000
 

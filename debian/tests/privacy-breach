@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -e
+
+cd /usr/share/doc/rmlint-doc/html
+
+# Make sure only local MathJax scripts are used.
+! grep -qi "src=['\"]http[s]\?://.\+/mathjax\.js" *.html
+
+# Make sure there are no asciinema demos.
+! grep -qi "src=['\"]http[s]\?://asciinema.org" *.html
+
+# Make sure no external web fonts are used.
+! grep -qi "<link.*//fonts.googleapis.com" *.html
