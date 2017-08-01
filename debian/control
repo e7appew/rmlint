@@ -88,7 +88,8 @@ Package: rmlint-doc
 Section: doc
 Architecture: all
 Multi-Arch: foreign
-Depends: libjs-bootstrap,
+Depends: fonts-vollkorn,
+         libjs-bootstrap,
          libjs-bootswatch,
          libjs-mathjax,
          ${misc:Depends},
