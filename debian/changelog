@@ -6,6 +6,7 @@ rmlint (2.6.1-2) UNRELEASED; urgency=medium
   * Add debian/gbp.conf.
   * debian/control:
     - Update Vcs-* to salsa.debian.org.
+    - Remove unnecessary Testsuite field.
 
  -- Carlos Maddela <e7appew@gmail.com>  Tue, 01 Aug 2017 15:51:53 +1000
 
