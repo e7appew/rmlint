@@ -4,6 +4,8 @@ rmlint (2.6.1-2) UNRELEASED; urgency=medium
     so that its use in HTML docs may be restored.  Thanks to
     Adam Borowski for suggestion.
   * Add debian/gbp.conf.
+  * debian/control:
+    - Update Vcs-* to salsa.debian.org.
 
  -- Carlos Maddela <e7appew@gmail.com>  Tue, 01 Aug 2017 15:51:53 +1000
 
