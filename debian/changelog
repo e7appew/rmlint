@@ -10,6 +10,8 @@ rmlint (2.6.1-2) UNRELEASED; urgency=medium
     - Set "Rules-Requires-Root: no".
   * Update lintian override to debian-watch-does-not-check-gpg-signature.
   * Add machine-readable upstream metadata.
+  * debian/rules:
+    - Simplify LFS build rules.
 
  -- Carlos Maddela <e7appew@gmail.com>  Tue, 01 Aug 2017 15:51:53 +1000
 

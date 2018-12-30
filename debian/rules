@@ -2,14 +2,13 @@
 
 export DH_VERBOSE = 1
 
-export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all future=+lfs
 
 # The following workaround is necessary for hardening, since
 # the project's SConstruct file doesn't make use of CPPFLAGS.
 DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/buildflags.mk
-export DEB_CFLAGS_MAINT_APPEND = $(CPPFLAGS) \
-	$(if $(filter $(DEB_HOST_ARCH_BITS),32),-D_FILE_OFFSET_BITS=64)
+export DEB_CFLAGS_MAINT_APPEND = $(CPPFLAGS)
 
 # Ensure that we use the python3 version of sphinx.
 export PATH := /usr/share/sphinx/scripts/python3:$(PATH)
