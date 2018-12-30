@@ -4,8 +4,8 @@ Upstream-Name: rmlint
 Source: https://github.com/sahib/rmlint
 
 Files: *
-Copyright: 2010-2016, Christopher Pahl <sahib@online.de>
-           2014-2016, Daniel Thomas <daniel.thomas@worleyparsons.com>
+Copyright: 2010-2018, Christopher Pahl <sahib@online.de>
+           2014-2018, Daniel Thomas <daniel.thomas@worleyparsons.com>
 License: GPL-3+
 
 Files: lib/checksums/city*
@@ -34,9 +34,13 @@ Files: lib/fts/*
 Copyright: 1989-1994, The Regents of the University of California
 License: BSD-3-clause
 
+Files: po/*
+Copyright: 2014-2018, Christopher Pahl <sahib@online.de>
+License: same-as-rmlint
+
 Files: debian/*
 Copyright: 2016, Axel Beckert <abe@debian.org>
-           2017, Carlos Maddela <e7appew@gmail.com>
+           2017-2018, Carlos Maddela <e7appew@gmail.com>
 License: GPL-3+
 
 License: BSD-2-clause
@@ -127,3 +131,6 @@ License: GPL-3+
  .
  On Debian systems, the complete text of the GNU General
  Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
+
+License: same-as-rmlint
+ This file is distributed under the same license as the rmlint package.
