@@ -2,7 +2,7 @@ Source: rmlint
 Section: utils
 Priority: optional
 Maintainer: Carlos Maddela <e7appew@gmail.com>
-Build-Depends: debhelper (>= 10),
+Build-Depends: debhelper (>= 11),
                dh-python,
                libblkid-dev,
                libelf-dev,
