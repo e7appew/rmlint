@@ -1,0 +1,15 @@
+%YAML 1.1
+---
+# https://wiki.debian.org/UpstreamMetadata
+Bug-Database: https://github.com/sahib/rmlint/issues
+Bug-Submit: https://github.com/sahib/rmlint/issues/new
+Changelog: https://github.com/sahib/rmlint/blob/develop/CHANGELOG.md
+Contact: Christopher Pahl <sahib@online.de>
+Documentation: https://rmlint.readthedocs.io/en/latest/index.html
+Donations: https://rmlint.readthedocs.io/en/latest/index.html#donations
+FAQ: https://rmlint.readthedocs.io/en/latest/faq.html
+Homepage: https://rmlint.readthedocs.io/
+Name: rmlint
+Repository: https://github.com/sahib/rmlint.git
+Repository-Browse: https://github.com/sahib/rmlint/commits/master
+Security-Contact: Christopher Pahl <sahib@online.de>
