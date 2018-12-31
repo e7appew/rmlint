@@ -1,3 +1,10 @@
+rmlint (2.8.0-2) UNRELEASED; urgency=medium
+
+  * Fix debian/tests/privacy-breach test to account for change
+    in document location.
+
+ -- Carlos Maddela <e7appew@gmail.com>  Tue, 01 Jan 2019 02:04:05 +1100
+
 rmlint (2.8.0-1) unstable; urgency=medium
 
   * New upstream release [2.8.0].

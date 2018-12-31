@@ -2,7 +2,7 @@
 
 set -e
 
-cd /usr/share/doc/rmlint-doc/html
+cd /usr/share/doc/rmlint/html
 
 # Make sure only local MathJax scripts are used.
 ! grep -qi "src=['\"]http[s]\?://.\+/mathjax\.js" *.html
