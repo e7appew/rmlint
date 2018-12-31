@@ -59,10 +59,13 @@ override_dh_auto_configure-indep:
 
 override_dh_auto_build-indep:
 	scons $(COMMON_SCONS_OPTS) docs
-	rm -rf docs/_build/html/_static/bootstrap-?.?.? docs/_build/html/_static/bootswatch-?.?.?
+	bash -O extglob \
+		-c "rm -rf docs/_build/html/_static/{bootstrap,bootswatch}-+([[:digit:]]).+([[:digit:]]).+([[:digit:]]) \
+		docs/_build/html/_static/js/jquery-+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).min.js"
 	sed -i \
 		-e 's@http[s]\?://.\+/mathjax/[^/]\+/[Mm]ath[Jj]ax.js@file:///usr/share/javascript/mathjax/MathJax.js@g' \
-		-e 's@\(bootstrap\|bootswatch\)-[[:digit:]]\(\.[[:digit:]]\)\{2\}@\1@g' \
+		-e 's@\(_static/\(bootstrap\|bootswatch\)\)-[[:digit:]]\+\(\.[[:digit:]]\+\)\{2\}@\1@g' \
+		-e 's@\(_static/js/jquery\)-[[:digit:]]\+\(\.[[:digit:]]\+\)\{2\}\(\.min\.js\)@\1\3@g' \
 		docs/_build/html/*.html
 
 override_dh_auto_install-indep:
@@ -78,7 +81,7 @@ override_dh_installdocs:
 	dh_installdocs --remaining-packages
 
 override_dh_sphinxdoc:
-	dh_sphinxdoc -prmlint-doc -Xbootstrap -Xbootswatch -Xjquery-
+	dh_sphinxdoc -prmlint-doc -Xbootstrap -Xbootswatch -Xjquery.min.js
 	dh_sphinxdoc --remaining-packages
 
 override_dh_auto_test:

@@ -91,6 +91,7 @@ Multi-Arch: foreign
 Depends: fonts-vollkorn,
          libjs-bootstrap,
          libjs-bootswatch,
+         libjs-jquery,
          libjs-mathjax,
          ${misc:Depends},
          ${sphinxdoc:Depends}

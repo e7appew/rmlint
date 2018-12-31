@@ -9,3 +9,4 @@ usr/share/doc/rmlint/html/_images/shredder.svg usr/share/doc/rmlint/html/_static
 usr/share/doc/rmlint/html/_images/timing.svg usr/share/doc/rmlint/html/_static/benchmarks/timing.svg
 usr/share/javascript/bootstrap usr/share/doc/rmlint/html/_static/bootstrap
 usr/share/javascript/bootswatch usr/share/doc/rmlint/html/_static/bootswatch
+usr/share/javascript/jquery/jquery.min.js usr/share/doc/rmlint/html/_static/js/jquery.min.js
