@@ -1,5 +1,6 @@
-rmlint (2.6.1-2) UNRELEASED; urgency=medium
+rmlint (2.8.0-1) UNRELEASED; urgency=medium
 
+  * New upstream release [2.8.0].
   * Add dependency on packaged version of Vollkorn desktop font,
     so that its use in HTML docs may be restored.  Thanks to
     Adam Borowski for suggestion.
