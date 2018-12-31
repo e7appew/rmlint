@@ -68,6 +68,7 @@ typedef struct RmCfg {
     gboolean must_match_tagged;
     gboolean must_match_untagged;
     gboolean find_hardlinked_dupes;
+    gboolean keep_hardlinked_dupes;
     gboolean limits_specified;
     gboolean filter_mtime;
     gboolean match_basename;
@@ -86,6 +87,9 @@ typedef struct RmCfg {
     gboolean progress_enabled;
     gboolean list_mounts;
     gboolean replay;
+    gboolean read_stdin;
+    gboolean read_stdin0;
+    gboolean no_backup;
 
     int permissions;
 
@@ -103,16 +107,32 @@ typedef struct RmCfg {
     RmOff skip_start_offset;
     RmOff skip_end_offset;
 
-    /* paths passed by command line */
+    /* paths passed by command line (or stdin) */
     GSList *paths;
     GSList *json_paths;
+
+    /* This variable is used for 2 purposes:
+     *
+     *   + To record  a  unique  index for each path supplied by the
+     *     user; a path's index represents  the number of paths that
+     *     were already processed. This is always the case.
+     *
+     *   + To provide  quick  access to the length of its associated
+     *     RmCfg::paths list. This is only the case when NOT running
+     *     in "--replay"  mode; when running in  "--replay" mode, it
+     *     just represents the total number  of paths that have been
+     *     supplied by  the user, i.e.,  the sums of the  lengths of
+     *     the associated lists  RmCfg::{paths,json_paths}, which is
+     *     not meant to be a useful  number to know, and is simply a
+     *     byproduct of calculating path indicies.
+     */
     guint path_count;
 
     /* working dir rmlint called from */
     char *iwd;
 
-	/* Path to the rmlint binary of this run */
-	char *full_argv0_path;
+    /* Path to the rmlint binary of this run */
+    char *full_argv0_path;
 
     /* the full command line */
     char *joined_argv;
@@ -131,6 +151,9 @@ typedef struct RmCfg {
     /* total number of bytes we are allowed to use (target only) */
     RmOff total_mem;
 
+    /* length of read buffers */
+    RmOff read_buf_len;
+
     /* number of bytes to read before going back to start of disk
      * (too big a sweep risks metadata getting pushed out of ram)*/
     RmOff sweep_size;
@@ -146,11 +169,21 @@ typedef struct RmCfg {
      */
     gboolean cache_file_structs;
 
-	/* Instead of running in duplicate detection mode,
-	 * check if the passed arguments are equal files
-	 * (or directories)
-	 */
-	gboolean run_equal_mode;
+    /* Instead of running in duplicate detection mode,
+     * check if the passed arguments are equal files
+     * (or directories)
+     */
+    gboolean run_equal_mode;
+    /* --dedupe options */
+    bool dedupe;
+    bool dedupe_readonly;
+
+    /* for --is-reflink option */
+    bool is_reflink;
+
+    /* don't use sse accelerations */
+    bool no_sse;
+
 } RmCfg;
 
 /**

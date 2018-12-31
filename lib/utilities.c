@@ -31,6 +31,7 @@
 #include <unistd.h>
 
 #include "config.h"
+#include "session.h"
 
 /* Be safe: This header is not essential and might be missing on some systems.
  * We only include it here, because it fixes some recent warning...
@@ -40,9 +41,9 @@
 #endif
 
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include <grp.h>
 #include <pwd.h>
@@ -75,7 +76,7 @@
 #endif
 
 #if HAVE_BLKID
-#include <blkid.h>
+#include <blkid/blkid.h>
 #endif
 
 #if HAVE_JSON_GLIB
@@ -144,7 +145,7 @@ bool rm_util_path_is_hidden(const char *path) {
 int rm_util_path_depth(const char *path) {
     int depth = 0;
 
-    while(path) {
+    while(path && *path) {
         /* Skip trailing slashes */
         if(*path == G_DIR_SEPARATOR && path[1] != 0) {
             depth++;
@@ -420,7 +421,7 @@ RmUserList *rm_userlist_new(void) {
 
 bool rm_userlist_contains(RmUserList *self, unsigned long uid, unsigned gid,
                           bool *valid_uid, bool *valid_gid) {
-    rm_assert_gentle(self);
+    g_assert(self);
     bool gid_found = FALSE;
     bool uid_found = FALSE;
 
@@ -445,7 +446,7 @@ bool rm_userlist_contains(RmUserList *self, unsigned long uid, unsigned gid,
 }
 
 void rm_userlist_destroy(RmUserList *self) {
-    rm_assert_gentle(self);
+    g_assert(self);
 
     g_sequence_free(self->users);
     g_sequence_free(self->groups);
@@ -500,9 +501,8 @@ static gchar rm_mounts_is_rotational_blockdev(const char *dev) {
     gchar is_rotational = -1;
 
 #if HAVE_SYSBLOCK /* this works only on linux */
-    char sys_path[PATH_MAX];
-
-    snprintf(sys_path, PATH_MAX, "/sys/block/%s/queue/rotational", dev);
+    char sys_path[PATH_MAX + 30];
+    snprintf(sys_path, sizeof(sys_path) - 1, "/sys/block/%s/queue/rotational", dev);
 
     FILE *sys_fdes = fopen(sys_path, "r");
     if(sys_fdes == NULL) {
@@ -547,7 +547,7 @@ typedef struct RmMountEntries {
 } RmMountEntries;
 
 static void rm_mount_list_close(RmMountEntries *self) {
-    rm_assert_gentle(self);
+    g_assert(self);
 
     for(GList *iter = self->entries; iter; iter = iter->next) {
         RmMountEntry *entry = iter->data;
@@ -563,7 +563,7 @@ static void rm_mount_list_close(RmMountEntries *self) {
 }
 
 static RmMountEntry *rm_mount_list_next(RmMountEntries *self) {
-    rm_assert_gentle(self);
+    g_assert(self);
 
     if(self->current) {
         self->current = self->current->next;
@@ -576,6 +576,23 @@ static RmMountEntry *rm_mount_list_next(RmMountEntries *self) {
     } else {
         return NULL;
     }
+}
+
+static bool fs_supports_reflinks(char *fstype, char *mountpoint) {
+    if(strcmp(fstype, "btrfs")==0) {
+        return true;
+    }
+    if(strcmp(fstype, "ocfs2")==0) {
+        return true;
+    }
+    if(strcmp(fstype, "xfs")==0) {
+        /* xfs *might* support reflinks...*/
+        char *cmd = g_strdup_printf("xfs_info '%s' | grep -q 'reflink=1'", mountpoint);
+        int res = system(cmd);
+        g_free(cmd);
+        return(res==0);
+    }
+    return false;
 }
 
 static RmMountEntries *rm_mount_list_open(RmMountTable *table) {
@@ -624,21 +641,11 @@ static RmMountEntries *rm_mount_list_open(RmMountTable *table) {
                             {"debugfs", 0},
                             {NULL, 0}};
 
-        /* btrfs and ocfs2 filesystems support reflinks for deduplication */
-        static const char *reflinkfs_types[] = {"btrfs", "ocfs2", NULL};
 
         const struct RmEvilFs *evilfs_found = NULL;
         for(int i = 0; evilfs_types[i].name && !evilfs_found; ++i) {
             if(strcmp(evilfs_types[i].name, wrap_entry->type) == 0) {
                 evilfs_found = &evilfs_types[i];
-            }
-        }
-
-        const char *reflinkfs_found = NULL;
-        for(int i = 0; reflinkfs_types[i] && !reflinkfs_found; ++i) {
-            if(strcmp(reflinkfs_types[i], wrap_entry->type) == 0) {
-                reflinkfs_found = reflinkfs_types[i];
-                break;
             }
         }
 
@@ -663,15 +670,15 @@ static RmMountEntries *rm_mount_list_open(RmMountTable *table) {
                   evilfs_found->name, wrap_entry->dir, (unsigned)dir_stat.st_dev);
         }
 
-        rm_log_debug_line("Filesystem %s: %s", wrap_entry->dir,
-                          (reflinkfs_found) ? "reflink" : "normal");
-
-        if(reflinkfs_found != NULL) {
+        if(fs_supports_reflinks(wrap_entry->type, wrap_entry->dir)) {
             RmStat dir_stat;
             rm_sys_stat(wrap_entry->dir, &dir_stat);
             g_hash_table_insert(table->reflinkfs_table,
                                 GUINT_TO_POINTER(dir_stat.st_dev),
-                                (gpointer)reflinkfs_found);
+                                wrap_entry->type);
+            rm_log_debug_line("Filesystem %s: reflink capable", wrap_entry->dir);
+        } else {
+            rm_log_debug_line("Filesystem %s: not reflink capable", wrap_entry->dir);
         }
     }
 
@@ -945,7 +952,7 @@ bool rm_mounts_is_evil(RmMountTable *self, dev_t to_check) {
 }
 
 bool rm_mounts_can_reflink(RmMountTable *self, dev_t source, dev_t dest) {
-    rm_assert_gentle(self);
+    g_assert(self);
     if(g_hash_table_contains(self->reflinkfs_table, GUINT_TO_POINTER(source))) {
         if(source == dest) {
             return true;
@@ -954,8 +961,8 @@ bool rm_mounts_can_reflink(RmMountTable *self, dev_t source, dev_t dest) {
                 g_hash_table_lookup(self->part_table, GINT_TO_POINTER(source));
             RmPartitionInfo *dest_part =
                 g_hash_table_lookup(self->part_table, GINT_TO_POINTER(dest));
-            rm_assert_gentle(source_part);
-            rm_assert_gentle(dest_part);
+            g_assert(source_part);
+            g_assert(dest_part);
             return (strcmp(source_part->fsname, dest_part->fsname) == 0);
         }
     } else {
@@ -993,6 +1000,8 @@ static struct fiemap *rm_offset_get_fiemap(int fd, const int n_extents,
     return fm;
 }
 
+#define _RM_OFFSET_DEBUG 0
+
 /* Return physical (disk) offset of the beginning of the file extent containing the
  * specified logical file_offset.
  * If a pointer to file_offset_next is provided then read fiemap extents until
@@ -1002,67 +1011,74 @@ static struct fiemap *rm_offset_get_fiemap(int fd, const int n_extents,
 RmOff rm_offset_get_from_fd(int fd, RmOff file_offset, RmOff *file_offset_next) {
     RmOff result = 0;
     bool done = FALSE;
+    bool first = TRUE;
 
     /* used for detecting contiguous extents */
     unsigned long expected = 0;
 
+    fsync(fd);
+
     while(!done) {
-        /* read in one extent */
+        /* read in next extent */
         struct fiemap *fm = rm_offset_get_fiemap(fd, 1, file_offset);
-        if(!fm) {
+
+        if(fm==NULL) {
+            /* got no extent data */
+#if _RM_OFFSET_DEBUG
+            rm_log_info_line("rm_offset_get_fiemap: got no fiemap for %s", path);
+#endif
+            break;
+        }
+
+        if (fm->fm_mapped_extents == 0) {
+#if _RM_OFFSET_DEBUG
+            rm_log_info_line("rm_offset_get_fiemap: got no extents for %s", path);
+#endif
             done = TRUE;
         } else {
-            if(!file_offset_next) {
-                /* no need to find end of fragment so one loop is enough*/
+
+            /* retrieve data from fiemap */
+            struct fiemap_extent fm_ext = fm->fm_extents[0];
+
+            if (first) {
+                /* remember disk location of start of data */
+                result = fm_ext.fe_physical;
+                first=FALSE;
+            } else {
+                /* check if subsequent extents are contiguous */
+                if(fm_ext.fe_physical != expected)  {
+                    /* current extent is not contiguous with previous, so we can stop */
+                    done = TRUE;
+                }
+            }
+
+            if (!done && file_offset_next != NULL) {
+                /* update logical offset of next fragment */
+                *file_offset_next = fm_ext.fe_logical + fm_ext.fe_length;
+            }
+
+            if(fm_ext.fe_flags & FIEMAP_EXTENT_LAST) {
                 done = TRUE;
             }
-            if(fm->fm_mapped_extents > 0) {
-                /* retrieve data from fiemap */
-                struct fiemap_extent *fm_ext = fm->fm_extents;
-                file_offset += fm_ext[0].fe_length;
-                if(result == 0) {
-                    /* this is the first extent */
-                    result = fm_ext[0].fe_physical;
-                    if(result == 0) {
-                        /* looks suspicious - let's get out of here */
-                        done = TRUE;
-                    }
-                } else if(fm_ext[0].fe_physical > expected ||
-                          fm_ext[0].fe_physical < result) {
-                    /* current extent is not contiguous with previous, so we can stop*/
-                    done = TRUE;
-                    if(file_offset_next) {
-                        /* caller wants to know logical offset of next fragment */
-                        *file_offset_next = fm_ext[0].fe_logical;
-                    }
-                }
-                if(fm_ext[0].fe_flags & FIEMAP_EXTENT_LAST) {
-                    if(!done) {
-                        done = TRUE;
-                        if(file_offset_next) {
-                            /* caller wants to know logical offset of next fragment -
-                             * signal
-                             * that it is EOF */
-                            *file_offset_next =
-                                fm_ext[0].fe_logical + fm_ext[0].fe_length;
-                        }
-                    }
-                }
-                if(!done) {
-                    expected = fm_ext[0].fe_physical + fm_ext[0].fe_length;
-                }
-            } else {
-                /* got no extents from rm_offset_get_fiemap */
-                done = true;
-                if(file_offset_next) {
-                    /* caller wants to know logical offset of next fragment but
-                     * we have an error... */
-                    *file_offset_next = 0;
-                }
+
+            if(fm_ext.fe_length <= 0) {
+                /* going nowhere; bail out rather than looping indefinitely */
+                done = TRUE;
             }
-            g_free(fm);
+
+            /* move offsets in preparation for reading next extent */
+            file_offset += fm_ext.fe_length;
+            expected = fm_ext.fe_physical + fm_ext.fe_length;
         }
+
+        g_free(fm);
     }
+
+    if (file_offset_next != NULL) {
+        /* return value of *file_offset_next: */
+        *file_offset_next = file_offset;
+    }
+
     return result;
 }
 
@@ -1078,41 +1094,6 @@ RmOff rm_offset_get_from_path(const char *path, RmOff file_offset,
     return result;
 }
 
-bool rm_offsets_match(char *path1, char *path2) {
-    bool result = FALSE;
-    int fd1 = rm_sys_open(path1, O_RDONLY);
-    if(fd1 == -1) {
-        rm_log_info_line("Error opening %s in rm_offsets_match", path1);
-        return FALSE;
-    }
-
-    int fd2 = rm_sys_open(path2, O_RDONLY);
-    if(fd2 == -1) {
-        rm_log_info_line("Error opening %s in rm_offsets_match", path2);
-        rm_sys_close(fd1);
-        return FALSE;
-    }
-
-    RmOff file1_offset_next = 0;
-    RmOff file2_offset_next = 0;
-    RmOff file_offset_current = 0;
-    while(!result &&
-          (rm_offset_get_from_fd(fd1, file_offset_current, &file1_offset_next) ==
-           rm_offset_get_from_fd(fd2, file_offset_current, &file2_offset_next)) &&
-          file1_offset_next != 0 && file1_offset_next == file2_offset_next) {
-        if(file1_offset_next == file_offset_current) {
-            /* phew, we got to the end */
-            result = TRUE;
-            break;
-        }
-        file_offset_current = file1_offset_next;
-    }
-
-    rm_sys_close(fd2);
-    rm_sys_close(fd1);
-    return result;
-}
-
 #else /* Probably FreeBSD */
 
 RmOff rm_offset_get_from_fd(_UNUSED int fd, _UNUSED RmOff file_offset,
@@ -1125,11 +1106,189 @@ RmOff rm_offset_get_from_path(_UNUSED const char *path, _UNUSED RmOff file_offse
     return 0;
 }
 
-bool rm_offsets_match(char *path1, char *path2) {
-    return (path1 == path2);
+#endif
+
+static gboolean rm_util_is_path_double(char *path1, char *path2) {
+    char *basename1 = rm_util_basename(path1);
+    char *basename2 = rm_util_basename(path2);
+    return (strcmp(basename1, basename2) == 0 &&
+            rm_util_parent_node(path1) == rm_util_parent_node(path2));
 }
 
+/* test if two file paths are on the same device (even if on different
+ * mountpoints)
+ */
+static gboolean rm_util_same_device(const char *path1, const char *path2) {
+    const char *best1 = NULL;
+    const char *best2 = NULL;
+    int len1 = 0;
+    int len2 = 0;
+
+    GList *mounts = g_unix_mounts_get(NULL);
+    for(GList *iter = mounts; iter; iter = iter->next) {
+        GUnixMountEntry *mount = iter->data;
+        const char *mountpath = g_unix_mount_get_mount_path(mount);
+        int len = strlen(mountpath);
+        if(len > len1 && strncmp(mountpath, path1, len) == 0) {
+            best1 = g_unix_mount_get_device_path(mount);
+            len1 = len;
+        }
+        if(len > len2 && strncmp(mountpath, path2, len) == 0) {
+            best2 = g_unix_mount_get_device_path(mount);
+            len2 = len;
+        }
+    }
+    gboolean result = (best1 && best2 && strcmp(best1, best2) == 0);
+    g_list_free_full(mounts, (GDestroyNotify)g_unix_mount_free);
+    return result;
+}
+
+RmLinkType rm_util_link_type(char *path1, char *path2) {
+#if _RM_OFFSET_DEBUG
+    rm_log_debug_line("Checking link type for %s vs %s", path1, path2);
 #endif
+    int fd1 = rm_sys_open(path1, O_RDONLY);
+    if(fd1 == -1) {
+        rm_log_perrorf("rm_util_link_type: Error opening %s", path1);
+        return RM_LINK_ERROR;
+    }
+
+#define RM_RETURN(value)   \
+    {                      \
+        rm_sys_close(fd1); \
+        return (value);    \
+    }
+
+    RmStat stat1;
+    int stat_state = rm_sys_stat(path1, &stat1);
+    if(stat_state == -1) {
+        rm_log_perrorf("rm_util_link_type: Unable to stat file %s", path1);
+        RM_RETURN(RM_LINK_ERROR);
+    }
+
+    if(!S_ISREG(stat1.st_mode)) {
+        RM_RETURN(RM_LINK_NOT_FILE);
+    }
+
+    int fd2 = rm_sys_open(path2, O_RDONLY);
+    if(fd2 == -1) {
+        rm_log_perrorf("rm_util_link_type: Error opening %s", path2);
+        RM_RETURN(RM_LINK_ERROR);
+    }
+
+#undef RM_RETURN
+#define RM_RETURN(value)   \
+    {                      \
+        rm_sys_close(fd1); \
+        rm_sys_close(fd2); \
+        return (value);    \
+    }
+
+    RmStat stat2;
+    stat_state = rm_sys_stat(path2, &stat2);
+    if(stat_state == -1) {
+        rm_log_perrorf("rm_util_link_type: Unable to stat file %s", path2);
+        RM_RETURN(RM_LINK_ERROR);
+    }
+
+    if(!S_ISREG(stat2.st_mode)) {
+        RM_RETURN(RM_LINK_NOT_FILE);
+    }
+
+    if(stat1.st_size != stat2.st_size) {
+#if _RM_OFFSET_DEBUG
+        rm_log_debug_line("rm_util_link_type: Files have different sizes: %" G_GUINT64_FORMAT
+                          " <> %" G_GUINT64_FORMAT, stat1.st_size,
+                          stat2.st_size);
+#endif
+        RM_RETURN(RM_LINK_WRONG_SIZE);
+    }
+
+    if(stat1.st_dev == stat2.st_dev && stat1.st_ino == stat2.st_ino) {
+        /* hardlinks or maybe even same file */
+        if(strcmp(path1, path2) == 0) {
+            RM_RETURN(RM_LINK_SAME_FILE);
+        } else if(rm_util_is_path_double(path1, path2)) {
+            RM_RETURN(RM_LINK_PATH_DOUBLE);
+        } else {
+            RM_RETURN(RM_LINK_HARDLINK);
+        }
+    }
+
+    if(stat1.st_dev != stat2.st_dev) {
+        /* reflinks must be on same filesystem but not necessarily
+         * same st_dev (btrfs subvolumes have different st_dev's) */
+        if(!rm_util_same_device(path1, path2)) {
+            RM_RETURN(RM_LINK_XDEV);
+        }
+    }
+
+#if HAVE_FIEMAP
+
+    RmOff logical_current = 0;
+
+    while(!rm_session_was_aborted()) {
+        RmOff logical_next_1 = 0;
+        RmOff logical_next_2 = 0;
+        RmOff physical_1 = rm_offset_get_from_fd(fd1, logical_current, &logical_next_1);
+        RmOff physical_2 = rm_offset_get_from_fd(fd2, logical_current, &logical_next_2);
+
+        if(physical_1 != physical_2) {
+#if _RM_OFFSET_DEBUG
+            rm_log_debug_line("Physical offsets differ at byte %" G_GUINT64_FORMAT
+                              ": %"G_GUINT64_FORMAT "<> %" G_GUINT64_FORMAT,
+                              logical_current, physical_1, physical_2);
+#endif
+            RM_RETURN(RM_LINK_NONE);
+        }
+        if(logical_next_1 != logical_next_2) {
+#if _RM_OFFSET_DEBUG
+            rm_log_debug_line("File offsets differ after %" G_GUINT64_FORMAT
+                              " bytes: %" G_GUINT64_FORMAT "<> %" G_GUINT64_FORMAT,
+                              logical_current, logical_next_1, logical_next_2);
+#endif
+            RM_RETURN(RM_LINK_NONE);
+        }
+
+        if(physical_1 == 0) {
+#if _RM_OFFSET_DEBUG
+            rm_log_debug_line(
+                "Can't determine whether files are clones (maybe inline extents?)");
+#endif
+            RM_RETURN(RM_LINK_MAYBE_REFLINK);
+        }
+
+#if _RM_OFFSET_DEBUG
+        rm_log_debug_line("Offsets match at logical=%" G_GUINT64_FORMAT
+                          ", physical=%" G_GUINT64_FORMAT,
+                          logical_current, physical_1);
+#endif
+        if(logical_next_1 <= logical_current) {
+            /* oops we seem to be getting nowhere (this shouldn't really happen) */
+            rm_log_info_line(
+                "rm_util_link_type() giving up: file1_offset_next<=file_offset_current for %s vs %s", path1, path2);
+            RM_RETURN(RM_LINK_ERROR)
+        }
+
+        if(logical_next_1 >= (RmOff)stat1.st_size) {
+            /* phew, we got to the end */
+#if _RM_OFFSET_DEBUG
+            rm_log_debug_line("Files are clones (share same data)")
+#endif
+            RM_RETURN(RM_LINK_REFLINK)
+        }
+
+        logical_current = logical_next_1;
+    }
+
+    RM_RETURN(RM_LINK_ERROR);
+#else
+    RM_RETURN(RM_LINK_NONE);
+#endif
+
+#undef RM_RETURN
+}
+
 
 /////////////////////////////////
 //  GTHREADPOOL WRAPPERS       //
@@ -1190,25 +1349,25 @@ bool rm_iso8601_format(time_t stamp, char *buf, gsize buf_size) {
 char *rm_format_elapsed_time(gfloat elapsed_sec, int sec_precision) {
     GString *buf = g_string_new(NULL);
 
-    if(elapsed_sec >= SECONDS_PER_DAY) {
+    if(elapsed_sec > SECONDS_PER_DAY) {
         gint days = elapsed_sec / SECONDS_PER_DAY;
         elapsed_sec -= days * SECONDS_PER_DAY;
-        g_string_append_printf(buf, "%dd ", days);
+        g_string_append_printf(buf, "%2dd ", days);
     }
 
-    if(elapsed_sec >= SECONDS_PER_HOUR) {
+    if(elapsed_sec > SECONDS_PER_HOUR) {
         gint hours = elapsed_sec / SECONDS_PER_HOUR;
         elapsed_sec -= hours * SECONDS_PER_HOUR;
-        g_string_append_printf(buf, "%dh ", hours);
+        g_string_append_printf(buf, "%2dh ", hours);
     }
 
-    if(elapsed_sec >= SECONDS_PER_MINUTE) {
+    if(elapsed_sec > SECONDS_PER_MINUTE) {
         gint minutes = elapsed_sec / SECONDS_PER_MINUTE;
         elapsed_sec -= minutes * SECONDS_PER_MINUTE;
-        g_string_append_printf(buf, "%dm ", minutes);
+        g_string_append_printf(buf, "%2dm ", minutes);
     }
 
-    g_string_append_printf(buf, "%.*fs", sec_precision, elapsed_sec);
+    g_string_append_printf(buf, "%2.*fs", sec_precision, elapsed_sec);
     return g_string_free(buf, FALSE);
 }
 
@@ -1233,4 +1392,11 @@ gdouble rm_running_mean_get(RmRunningMean *m) {
     }
 
     return m->sum / n;
+}
+
+void rm_running_mean_unref(RmRunningMean *m) {
+    if(m->values) {
+        g_free(m->values);
+        m->values = NULL;
+    }
 }

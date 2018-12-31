@@ -4,6 +4,81 @@ All notable changes to this project will be documented in this file.
 
 The format follows [keepachangelog.com]. Please stick to it.
 
+## [2.8.0 Maidenly Moose] -- Unreleased
+
+Mostly a bugfix release with smaller functional changes.
+
+### Added
+
+- Support for reflinks on XFS (48c2e5b1)
+- Option "--no-backup" to overwrite output files as before (see "Changed")
+- New build system option called "gettext" that eases the maintenance of translations.
+  (thanks Michael Witten)
+- gui: Add config option to choose how to handle the found duplicates
+
+### Changed
+
+- -pp is now silently permitted, but is the same as -p
+- Old output files get backed up now to a new timestamped name.
+  This was done to not to overwrite the results of long runs.
+  You can use --no-backup to disable this behaviour.
+- Several internal cleanups and potential bug fixes (thanks to Michael Witten)
+- Change the default optimization level for a build to -O2.
+
+### Deprecated
+
+Nothing was deprecated.
+
+### Removed
+
+Nothing was removed.
+
+### Fixed
+
+- Several small fixes in the documentation.
+- Compiler warnings that may happen with clang and on 32 bit.
+- "-g" now does not overwrite other formatters anymore.
+- Make the progressbar less flickering.
+- Startup error when the permissions to a location where bad.
+- Endless loop that happens on btrfs due to the fiemap optimization.
+- Fix a bug when doing "rmlint --replay x.json" without an explicit path.
+- Fix -f that did not really follow symbolic links.
+- gui: locations are now stored persistently and survive restarts.
+- scons should work now with both python2 and python3.
+- extensive memory allocation with slow CPUs.
+- Do not use --remove-destination of cp, but use "rm + ln" to support non-GNU systems.
+
+## [2.7.0 Toothless Taipan] -- 2017-04-25
+
+### Added
+
+* New checksum types metro and highway
+* New option --keep-hardlinked
+* --dedupe option can deduplicate twins on any reflick-capable filesystems
+* --dedupe-readonly option can dedupe files on read-only btrfs snapshots
+
+### Changed
+
+* Checksum types for -P... options (see https://github.com/sahib/rmlint/issues/261)
+
+### Deprecated
+
+* Option --btrfs-clone (use --dedupe)
+* Paranoia option -pp (use -p)
+
+### Removed
+
+* Checksum types bastard, spooky, city & farmhash
+* Multihash output option
+
+### Fixed
+
+* Fix scons 3 compatibility issue (https://github.com/sahib/rmlint/issues/258)
+* Fix compile error on systems with no FIEMAP (https://github.com/sahib/rmlint/issues/252)
+* Fix handling of bad uids/gids in python output formatter (https://github.com/sahib/rmlint/issues/239)
+* Fix escaping of dirnames in rmlint.sh test for new emptydirs (https://github.com/sahib/rmlint/issues/241)
+* Fix another quoting issue (https://github.com/sahib/rmlint/issues/272)
+
 ## [2.6.1 Penetrating Pineapple] -- 2017-06-13
 
 ### Fixed
@@ -178,7 +253,7 @@ The format follows [keepachangelog.com]. Please stick to it.
 ### Added
 
 - A fully working graphical user interface which is installed as a python module
-  by default (can be disabled via compile option ie ``scons --without-gui``). 
+  by default (can be disabled via compile option ie ``scons --without-gui``).
   It can be started via  ``rmlint --gui``.
 - Support for automatic deduplication on btrfs using  ``BTRFS_IOC_FILE_EXTENT_SAME``.
   The Shellscript now will contain calls to  ``rmlint  --btrfs $source $dest``
@@ -220,7 +295,7 @@ The format follows [keepachangelog.com]. Please stick to it.
 
 ### Added
 
-- ``--replay``: Re-output a previously written json file. Allow filtering 
+- ``--replay``: Re-output a previously written json file. Allow filtering
   by using all other standard options (like size or directory filtering).
 - ``--sort-by``: Similar to ``-S``, but sorts groups of files. So showing
   the group with the biggest size sucker is as easy as ``-y s``.

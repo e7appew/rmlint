@@ -24,7 +24,7 @@ so we gonna explain them to you here.
 
     A file that matches the original.  Note that depending
     on rmlint settings, "match" may mean an exact match or
-    just that the files have matching hash values (see XXX)
+    just that the files have matching hash values.
 
 
 
@@ -87,6 +87,7 @@ can also use external tools to feed ``rmlint's stdin``:
 .. code-block:: bash
 
    $ find pics/ -iname '*.png' | rmlint -
+   $ find pics/ -iname '*.png' -print0 | rmlint -0 # (also handles filenames with newline characters)
 
 Limit files by size using ``--size``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -308,9 +309,9 @@ Here's the list of currently available formatters and their config options:
 
     **Config values:**
 
-    - *clone*: ``btrfs`` only. Try to clone both files with the
-      BTRFS_IOC_FILE_EXTENT_SAME ``ioctl(3p)``. This will physically delete
-      duplicate extents. Needs at least kernel 4.2.
+    - *clone*: reflink-capable filesystems only. Try to clone both files with the
+      FIDEDUPERANGE ``ioctl(3p)`` (or BTRFS_IOC_FILE_EXTENT_SAME on older kernels).
+      This will free up duplicate extents. Needs at least kernel 4.2.
     - *reflink*: Try to reflink the duplicate file to the original. See also
       ``--reflink`` in ``man 1 cp``. Fails if the filesystem does not support
       it.
@@ -450,20 +451,21 @@ more than about :math:`2^{80}` files of the same size.
 If you're wary, you might want to make a bit more paranoid than the default. By
 default the ``blake2b`` (previously ``sha1`` was the default) hash algorithm is
 used, which we consider a good trade-off of speed and accuracy. ``rmlint``'s
-paranoia level can be easily inc/decreased using the ``-p`` (``--paranoid``)/
-``-P`` (``--less-paranoid``) option (which might be given twice each).
+paranoia level can be adjusted using the ``-p`` (``--paranoid``) switch.
 
 Here's what they do in detail:
 
-* ``-p`` is equivalent to ``--algorithm=sha512``
-* ``-pp`` is equivalent to ``--algorithm=paranoid``
+* ``-p`` is equivalent to ``--algorithm=paranoid``
+* ``-P`` is equivalent to ``--algorithm=highway256``
+* ``-PP`` is equivalent to ``--algorithm=metro256``
+* ``-PP`` is equivalent to ``--algorithm=metro``
 
 As you see, it just enables a certain duplicate detection algorithm to either use
 a stronger hash function or to do a byte-by-byte comparison. While this might sound
 slow it's often only a few seconds slower than the default behaviour.
 
 There is a bunch of other hash functions you can lookup in the manpage.
-We recommend never to use the ``-P`` option.
+We recommend never to use anythinh worse than the default.
 
 .. note::
 
@@ -775,7 +777,7 @@ Here's just a list of options that are nice to know, but not essential:
   .. code-block:: bash
 
       $ # find all files except everything under .git or .svn folders
-      $ find . -type d | grep -v '\(.git\|.svn\)' | rmlint - --hidden
+      $ find . -type d | grep -v '\(.git\|.svn\)' -print0 | rmlint -0 --hidden
 
   But you would have checked the output anyways, wouldn't you?
 

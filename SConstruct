@@ -11,7 +11,7 @@ import SCons
 import SCons.Conftest as tests
 from SCons.Script.SConscript import SConsEnvironment
 
-pkg_config = os.getenv('PKG_CONFIG') or 'pkg-config'
+pkg_config = os.getenv('PKG_CONFIG', 'pkg-config')
 
 def read_version():
     with open('.version', 'r') as handle:
@@ -33,6 +33,28 @@ Export('VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_NAME')
 ###########################################################################
 #                                Utilities                                #
 ###########################################################################
+
+def check_gcc_version(context):
+    context.Message('Checking for GCC version... ')
+
+    try:
+        v = subprocess.check_output("printf '%s\n' __GNUC__ | gcc -E -P -", shell=True)
+        try:
+            v = int(v)
+            context.Result(str(v))
+        except ValueError:
+            print('Expected a number, but got: ' + v)
+            v = 0
+    except subprocess.CalledProcessError:
+        print('Unable to find GCC version.')
+        v = 0
+    except AttributeError:
+        print('Not allowed.')
+        v = 0
+
+    conf.env['__GNUC__'] = v
+    return v
+
 
 def check_pkgconfig(context, version):
     context.Message('Checking for pkg-config... ')
@@ -325,6 +347,15 @@ def check_btrfs_h(context):
     context.Result(rc)
     return rc
 
+def check_linux_fs_h(context):
+    rc = 1
+    if tests.CheckHeader(context, 'linux/fs.h'):
+        rc = 0
+
+    conf.env['HAVE_LINUX_FS_H'] = rc
+    context.did_show_result = True
+    context.Result(rc)
+    return rc
 
 def check_linux_limits(context):
     rc = 1
@@ -349,6 +380,30 @@ def check_cygwin(context):
         context.Message("platform.uname() failed")
 
     conf.env['IS_CYGWIN'] = rc
+    context.Result(rc)
+    return rc
+
+def check_mm_crc32_u64(context):
+
+    rc = 0 if tests.CheckDeclaration(
+            context,
+            symbol='_mm_crc32_u64',
+            includes='#include <nmmintrin.h>\n'
+            ) else 1
+
+    conf.env['HAVE_MM_CRC32_U64'] = rc
+    context.did_show_result = True
+    context.Result(rc)
+    return rc
+
+def check_builtin_cpu_supports(context):
+    rc = 0 if tests.CheckDeclaration(
+            context,
+            symbol='__builtin_cpu_supports'
+            ) else 1
+
+    conf.env['HAVE_BUILTIN_CPU_SUPPORTS'] = rc
+    context.did_show_result = True
     context.Result(rc)
     return rc
 
@@ -415,7 +470,7 @@ else:
 
 # If the output is not a terminal, remove the COLORS
 if not sys.stdout.isatty():
-    for key, value in COLORS.iteritems():
+    for key, value in COLORS.items():
         COLORS[key] = ''
 
 # Configure the actual colors to our liking:
@@ -469,14 +524,6 @@ for suffix in ['libelf', 'gettext', 'fiemap', 'blkid', 'json-glib', 'gui']:
         dest='with_' + suffix
     )
 
-AddOption(
-    '--with-sse', action='store_const', default=False, const=False, dest='with_sse'
-)
-
-AddOption(
-    '--without-sse', action='store_const', default=False, const=False, dest='with_sse'
-)
-
 # General Environment
 options = dict(
     CXXCOMSTR=compile_source_message,
@@ -508,6 +555,7 @@ Export('env')
 
 # Configuration:
 conf = Configure(env, custom_tests={
+    'check_gcc_version': check_gcc_version,
     'check_pkgconfig': check_pkgconfig,
     'check_pkg': check_pkg,
     'check_git_rev': check_git_rev,
@@ -524,8 +572,11 @@ conf = Configure(env, custom_tests={
     'check_gettext': check_gettext,
     'check_linux_limits': check_linux_limits,
     'check_btrfs_h': check_btrfs_h,
+    'check_linux_fs_h': check_linux_fs_h,
     'check_uname': check_uname,
     'check_cygwin': check_cygwin,
+    'check_mm_crc32_u64': check_mm_crc32_u64,
+    'check_builtin_cpu_supports': check_builtin_cpu_supports,
     'check_sysmacro_h': check_sysmacro_h
 })
 
@@ -578,6 +629,17 @@ if 'LDFLAGS' in os.environ:
     conf.env.Append(LINKFLAGS=os.environ['LDFLAGS'])
     print(">> Appending custom link flags : " + os.environ['LDFLAGS'])
 
+if 'AR' in os.environ:
+    conf.env.Replace(AR=os.environ['AR'])
+    print(">> Using ar: " + os.environ['AR'])
+
+if 'NM' in os.environ:
+    conf.env.Replace(NM=os.environ['NM'])
+    print(">> Using nm: " + os.environ['NM'])
+
+if 'RANLIB' in os.environ:
+    conf.env.Replace(RANLIB=os.environ['RANLIB'])
+    print(">> Using ranlib: " + os.environ['RANLIB'])
 
 # Support museums or other debian flavours:
 conf.check_c11()
@@ -599,27 +661,29 @@ if conf.env['IS_CYGWIN']:
 else:
     conf.env.Append(CCFLAGS=['-fPIC'])
 
-
-if ARGUMENTS.get('DEBUG') == "1":
-    conf.env.Append(CCFLAGS=['-ggdb3'])
-else:
-    # Generic compiler:
-    conf.env.Append(CCFLAGS=['-Os'])
-    conf.env.Append(LINKFLAGS=['-s'])
+# check _mm_crc32_u64 (SSE4.2) support:
+conf.check_mm_crc32_u64()
+if conf.env['HAVE_MM_CRC32_U64']:
+    conf.env.Append(CCFLAGS=['-msse4.2'])
 
 if 'clang' in os.path.basename(conf.env['CC']):
     conf.env.Append(CCFLAGS=['-fcolor-diagnostics'])  # Colored warnings
     conf.env.Append(CCFLAGS=['-Qunused-arguments'])   # Hide wrong messages
+    conf.env.Append(CCFLAGS=['-Wno-bad-function-cast'])
+else:
+    gcc_version = conf.check_gcc_version()
+    if gcc_version >= 8:
+        conf.env.Append(CCFLAGS=['-Wno-cast-function-type'])
 
 # Optional flags:
-conf.env.Append(CFLAGS=[
+conf.env.Append(CCFLAGS=[
     '-Wall', '-W', '-Wextra',
     '-Winit-self',
     '-Wstrict-aliasing',
     '-Wmissing-include-dirs',
     '-Wuninitialized',
     '-Wstrict-prototypes',
-    '-Wno-implicit-fallthrough'
+    '-Wno-implicit-fallthrough',
 ])
 
 env.ParseConfig(pkg_config + ' --cflags --libs ' + ' '.join(packages))
@@ -627,6 +691,7 @@ env.ParseConfig(pkg_config + ' --cflags --libs ' + ' '.join(packages))
 
 conf.env.Append(_LIBFLAGS=['-lm'])
 
+conf.check_builtin_cpu_supports()
 conf.check_blkid()
 conf.check_sys_block()
 conf.check_libelf()
@@ -639,11 +704,49 @@ conf.check_linux_limits()
 conf.check_posix_fadvise()
 conf.check_faccessat()
 conf.check_btrfs_h()
+conf.check_linux_fs_h()
 conf.check_uname()
 conf.check_sysmacro_h()
 
 if conf.env['HAVE_LIBELF']:
     conf.env.Append(_LIBFLAGS=['-lelf'])
+
+if ARGUMENTS.get('GDB') == '1':
+    ARGUMENTS['DEBUG'] = '1'
+    ARGUMENTS['SYMBOLS'] = '1'
+
+O_DEBUG   = 'g' # The optimisation level for a debug   build
+O_RELEASE = '2' # The optimisation level for a release build
+
+# build modes
+if ARGUMENTS.get('DEBUG') == "1":
+    print("Compiling in debug mode")
+    conf.env.Append(CCFLAGS=['-DRM_DEBUG', '-fno-inline'])
+    O_value = ARGUMENTS.get('O', O_DEBUG)
+else:
+    conf.env.Append(CCFLAGS=['-DG_DISABLE_ASSERT', '-DNDEBUG'])
+    conf.env.Append(LINKFLAGS=['-s'])
+    O_value = ARGUMENTS.get('O', O_RELEASE)
+
+if O_value == 'debug':
+    O_value = O_DEBUG
+elif O_value == 'release':
+    O_value = O_RELEASE
+
+cc_O_option = '-O' + O_value
+
+print("Using compiler optimisation {} (to change, run scons with O=[0|1|2|3|s|fast])".format(cc_O_option))
+conf.env.Append(CCFLAGS=[cc_O_option])
+
+if ARGUMENTS.get('SYMBOLS') == '1':
+    print("Compiling with debugging symbols")
+    conf.env.Append(CCFLAGS='-g3')
+
+value = ARGUMENTS.get('CCFLAGS')
+if value:
+    import shlex
+    print("Appending custom build flags provided on command line: " + value)
+    conf.env.Append(CCFLAGS=shlex.split(value))
 
 SConsEnvironment.Chmod = SCons.Action.ActionFactory(
     os.chmod,
@@ -662,6 +765,39 @@ SConsEnvironment.InstallPerm = InstallPerm
 
 # Your extra checks here
 env = conf.Finish()
+
+def get_cpu_count():
+    # priority: environ('NUM_CPU'), else try to read actual cpu count, else fallback
+    fallback = 4
+
+    if 'NUM_CPU' in os.environ:
+        return int(os.environ.get('NUM_CPU'))
+
+    # try multiprocessing.cpu_count() (Python 2.6+)
+    try:
+        import multiprocessing
+        return multiprocessing.cpu_count()
+    except (ImportError, NotImplementedError):
+        pass
+
+   # try psutil.cpu_count()
+    try:
+        import psutil
+        return psutil.cpu_count()
+    except (ImportError, AttributeError):
+        pass
+
+    # default value
+    return fallback
+
+
+# set number of parallel jobs during build
+# note: while not particularly intuitive or obvious from the documentation,
+# SetOption() will *not* over-ride commandline option passed by `scons -j<n>`
+# or `scons --jobs=<n>`
+SetOption('num_jobs', get_cpu_count())
+
+print ("Running with --jobs=" + repr(GetOption('num_jobs')))
 
 library = SConscript('lib/SConscript')
 programs = SConscript('src/SConscript', exports='library')
@@ -770,7 +906,8 @@ if 'config' in COMMAND_LINE_TARGETS:
     Install prefix       : {prefix}
     Actual prefix        : {actual_prefix}
     Verbose building     : {verbose}
-    Adding debug symbols : {debug}
+    Adding debug checks  : {debug}
+    Adding debug symbols : {symbols}
 
 Type 'scons' to actually compile rmlint now. Good luck.
     '''.format(
@@ -795,6 +932,7 @@ Type 'scons' to actually compile rmlint now. Good luck.
             actual_prefix=GetOption('actual_prefix') or GetOption('prefix'),
             verbose=yesno(ARGUMENTS.get('VERBOSE')),
             debug=yesno(ARGUMENTS.get('DEBUG')),
+            symbols=yesno(ARGUMENTS.get('SYMBOLS')),
             version='{a}.{b}.{c} "{n}" (rev {r})'.format(
                 a=VERSION_MAJOR, b=VERSION_MINOR, c=VERSION_PATCH,
                 n=VERSION_NAME, r=env.get('gitrev', 'unknown')

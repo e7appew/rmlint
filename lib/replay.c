@@ -187,7 +187,7 @@ static RmFile *rm_parrot_try_next(RmParrot *polly) {
     file = rm_file_new(polly->session, path, stat_info, type, 0, 0, 0);
     file->is_original = json_object_get_boolean_member(object, "is_original");
     file->is_symlink = (lstat_buf.st_mode & S_IFLNK);
-    file->digest = rm_digest_new(RM_DIGEST_EXT, 0, 0, 0, FALSE);
+    file->digest = rm_digest_new(RM_DIGEST_EXT, 0);
     file->free_digest = true;
 
     if(file->is_original) {
@@ -213,7 +213,7 @@ static RmFile *rm_parrot_try_next(RmParrot *polly) {
     if(hardlink_of != NULL) {
         rm_file_hardlink_add(polly->last_original, file);
     } else {
-        rm_assert_gentle(!file->hardlinks);
+        g_assert(!file->hardlinks);
     }
 
     return file;

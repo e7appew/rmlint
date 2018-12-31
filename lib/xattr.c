@@ -83,9 +83,10 @@ static int rm_xattr_build_key(RmSession *session,
                               const char *suffix,
                               char *buf,
                               size_t buf_size) {
-    rm_assert_gentle(session);
+    g_assert(session);
 
     /* Be safe, assume caller is not concentrated. */
+    g_assert(buf);
     memset(buf, 0, sizeof(buf_size));
 
     const char *digest_name = rm_digest_type_to_string(session->cfg->checksum_type);
@@ -93,22 +94,19 @@ static int rm_xattr_build_key(RmSession *session,
         digest_name = rm_digest_type_to_string(RM_DEFAULT_DIGEST);
     }
 
+    g_assert(suffix);
     return snprintf(buf, buf_size, "user.rmlint.%s.%s", digest_name, suffix) < 0;
 }
 
 static int rm_xattr_build_cksum(RmFile *file, char *buf, size_t buf_size) {
-    rm_assert_gentle(file);
-    rm_assert_gentle(file->digest);
+    g_assert(file);
+    g_assert(file->digest);
 
+    g_assert(buf);
     memset(buf, '0', buf_size);
     buf[buf_size - 1] = 0;
 
-    if(file->digest->type == RM_DIGEST_PARANOID) {
-        rm_assert_gentle(file->digest->paranoid->shadow_hash);
-        return rm_digest_hexstring(file->digest->paranoid->shadow_hash, buf);
-    } else {
-        return rm_digest_hexstring(file->digest, buf);
-    }
+    return rm_digest_hexstring(file->digest, buf);
 }
 
 static int rm_xattr_is_fail(const char *name, int rc) {
@@ -155,9 +153,9 @@ static int rm_xattr_del(RmFile *file, const char *key) {
 ////////////////////////////
 
 int rm_xattr_write_hash(RmFile *file, RmSession *session) {
-    rm_assert_gentle(file);
-    rm_assert_gentle(file->digest);
-    rm_assert_gentle(session);
+    g_assert(file);
+    g_assert(file->digest);
+    g_assert(session);
 
 #if HAVE_XATTR
     if(file->ext_cksum || session->cfg->write_cksum_to_xattr == false) {
@@ -183,8 +181,8 @@ int rm_xattr_write_hash(RmFile *file, RmSession *session) {
 }
 
 gboolean rm_xattr_read_hash(RmFile *file, RmSession *session) {
-    rm_assert_gentle(file);
-    rm_assert_gentle(session);
+    g_assert(file);
+    g_assert(session);
 
 #if HAVE_XATTR
     if(session->cfg->read_cksum_from_xattr == false) {
@@ -204,13 +202,13 @@ gboolean rm_xattr_read_hash(RmFile *file, RmSession *session) {
         return FALSE;
     }
 
-    if(cksum_hex_str == NULL || strcmp(cksum_hex_str, "")==0) {
+    if(cksum_hex_str[0] == 0 || strcmp(cksum_hex_str, "")==0) {
         return FALSE;
     }
 
     if(FLOAT_SIGN_DIFF(g_ascii_strtod(mtime_buf, NULL), file->mtime, MTIME_TOL) < 0) {
         /* Data is too old and not useful, autoclean it */
-        rm_log_debug_line("Checksum too old for %s, %li < %li",
+        rm_log_debug_line("Checksum too old for %s, %" G_GINT64_FORMAT " < %" G_GINT64_FORMAT,
                           file->folder->basename,
                           g_ascii_strtoll(mtime_buf, NULL, 10),
                           (gint64)file->mtime);
@@ -226,8 +224,8 @@ gboolean rm_xattr_read_hash(RmFile *file, RmSession *session) {
 }
 
 int rm_xattr_clear_hash(RmFile *file, RmSession *session) {
-    rm_assert_gentle(file);
-    rm_assert_gentle(session);
+    g_assert(file);
+    g_assert(session);
 
 #if HAVE_XATTR
     int error = 0;
