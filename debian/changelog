@@ -27,7 +27,7 @@ rmlint (2.8.0-1) unstable; urgency=medium
   * Add maintainer scripts for upgrading to and downgrading from
     this version of rmlint-doc, since it has some symlink changes.
 
- -- Carlos Maddela <e7appew@gmail.com>  Mon, 31 Dec 2018 20:28:13 +1100
+ -- Carlos Maddela <e7appew@gmail.com>  Mon, 31 Dec 2018 23:52:54 +1100
 
 rmlint (2.6.1-1) unstable; urgency=medium
 
