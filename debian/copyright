@@ -8,23 +8,45 @@ Copyright: 2010-2018, Christopher Pahl <sahib@online.de>
            2014-2018, Daniel Thomas <daniel.thomas@worleyparsons.com>
 License: GPL-3+
 
-Files: lib/checksums/city*
-Copyright: 2011, Google, Inc.
-           2011-2012, Alexander Nusov
+Files: lib/checksums/blake2/*
+Copyright: 2012, Samuel Neves <sneves@dei.uc.pt>
+License: CC0-1.0 or OpenSSL-License or Apache-2.0
+Comment:
+ You may use this under the terms of the CC0, the OpenSSL Licence,
+ or the Apache Public License 2.0, at your option.  The terms of these
+ licenses can be found at:
+ .
+ - CC0 1.0 Universal : http://creativecommons.org/publicdomain/zero/1.0
+ - OpenSSL license   : https://www.openssl.org/source/license.html
+ - Apache 2.0        : http://www.apache.org/licenses/LICENSE-2.0
+ .
+ More information about the BLAKE2 hash function can be found at
+ https://blake2.net.
+
+Files: lib/checksums/blake2/blake2xb-ref.c
+       lib/checksums/blake2/blake2xs-ref.c
+Copyright: 2016, JP Aumasson <jeanphilippe.aumasson@gmail.com>
+           2016, Samuel Neves <sneves@dei.uc.pt>
+License: CC0-1.0 or OpenSSL-License or Apache-2.0
+
+Files: lib/checksums/metrohash*
+Copyright: 2015, J. Andrew Rogers
 License: Expat
 
 Files: lib/checksums/murmur3.*
-Copyright: Austin Appleby
+Copyright: Daniel Thomas
+           Austin Appleby
 License: public-domain
  MurmurHash3 was written by Austin Appleby, and is placed in the public
  domain. The author hereby disclaims copyright to this source code.
 
-Files: lib/checksums/spooky-c.*
-Copyright: 2010, Bob Jenkins
-           2011, Andi Kleen <andikleen@github>
-           2012, Ziga Zupanec <ziga.zupanec@gmail.com>
+Files: lib/checksums/sha3/*
+Copyright: Andrey Jivsov <crypto@brainhub.org>
 License: public-domain
- public domain
+ This work is in public domain.
+ .
+ I would appreciate any attribution to this work if you used the code
+ or ideas. I thank you for this in advance.
 
 Files: lib/checksums/xxhash/*
 Copyright: 2012-2015, Yann Collet
@@ -134,3 +156,52 @@ License: GPL-3+
 
 License: same-as-rmlint
  This file is distributed under the same license as the rmlint package.
+
+License: CC0-1.0
+ To the extent possible under law, the author(s) have dedicated all copyright
+ and related and neighboring rights to this software to the public domain
+ worldwide. This software is distributed without any warranty.
+ .
+ You should have received a copy of the CC0 Public Domain Dedication along with
+ this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+ .
+ On Debian systems, the complete text of the CC0 1.0 Universal license can be
+ found in ‘/usr/share/common-licenses/CC0-1.0’.
+
+License: OpenSSL-License
+ OpenSSL is covered by one of two licenses, depending on which release is
+ involved. In all cases, there is a file named LICENSE in the top-level
+ of the release. Copies can also be found here.
+ .
+ For the 3.0.0 release, and later releases derived from that, the Apache
+ License v2 applies. This also applies to the git "master" branch.
+ .
+ For any release made before OpenSSL 3.0.0 (namely the 1.1.1, 1.1.0,
+ 1.0.2, and all prior releases including those not currently supported),
+ the dual OpenSSL and SSLeay license applies. Note that this is also
+ true for any updates to those releases -- the "letter suffix" -- no
+ matter when they are made. It also applies to the git branches for all
+ those releases, and to any public forks that have not rebased to master
+ (or 3.0.0).
+ .
+ You should have received a copy of the OpenSSL License along with
+ this software. If not, see <https://www.openssl.org/source/license.html>.
+
+License: Apache-2.0
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+ .
+  http://www.apache.org/licenses/LICENSE-2.0
+ .
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ .
+ On Debian systems, the complete text of the GNU General Public License
+ version 2 can be found in /usr/share/common-licenses/Apache-2.0 file.
