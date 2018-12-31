@@ -97,6 +97,7 @@ Depends: fonts-vollkorn,
          libjs-mathjax,
          ${misc:Depends},
          ${sphinxdoc:Depends}
+Pre-Depends: dpkg (>= 1.17.14)
 Built-Using: ${sphinxdoc:Built-Using}
 Description: HTML documentation for rmlint
  rmlint finds space waste and other broken things on your filesystem

@@ -24,6 +24,8 @@ rmlint (2.8.0-1) unstable; urgency=medium
   * Update debian/copyright.
   * Build with Debhelper compat level 11.
   * Link instances of jquery to packaged version.
+  * Add maintainer scripts for upgrading to and downgrading from
+    this version of rmlint-doc, since it has some symlink changes.
 
  -- Carlos Maddela <e7appew@gmail.com>  Mon, 31 Dec 2018 20:28:13 +1100
 
