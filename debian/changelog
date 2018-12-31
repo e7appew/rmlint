@@ -1,4 +1,4 @@
-rmlint (2.8.0-1) UNRELEASED; urgency=medium
+rmlint (2.8.0-1) unstable; urgency=medium
 
   * New upstream release [2.8.0].
   * debian/patches/*:
@@ -25,7 +25,7 @@ rmlint (2.8.0-1) UNRELEASED; urgency=medium
   * Build with Debhelper compat level 11.
   * Link instances of jquery to packaged version.
 
- -- Carlos Maddela <e7appew@gmail.com>  Mon, 31 Dec 2018 12:42:12 +1100
+ -- Carlos Maddela <e7appew@gmail.com>  Mon, 31 Dec 2018 20:28:13 +1100
 
 rmlint (2.6.1-1) unstable; urgency=medium
 
