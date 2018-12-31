@@ -19,10 +19,10 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
  4 files changed, 16 insertions(+), 5 deletions(-)
 
 diff --git a/SConstruct b/SConstruct
-index f8e2b10..0688b72 100755
+index 81d54a4..082a679 100755
 --- a/SConstruct
 +++ b/SConstruct
-@@ -68,13 +68,14 @@ def check_pkg(context, name, varname, required=True):
+@@ -90,13 +90,14 @@ def check_pkg(context, name, varname, required=True):
  
  
  def check_git_rev(context):
@@ -40,7 +40,7 @@ index f8e2b10..0688b72 100755
      except AttributeError:
          # Patch for some special sandbox permission problems.
          # See https://github.com/sahib/rmlint/issues/143#issuecomment-139929733
-@@ -661,6 +662,12 @@ def InstallPerm(env, dest, files, perm):
+@@ -764,6 +765,12 @@ def InstallPerm(env, dest, files, perm):
  SConsEnvironment.InstallPerm = InstallPerm
  
  # Your extra checks here
@@ -52,12 +52,12 @@ index f8e2b10..0688b72 100755
 +
  env = conf.Finish()
  
- library = SConscript('lib/SConscript')
+ def get_cpu_count():
 diff --git a/lib/SConscript b/lib/SConscript
-index 8412b40..ffa6252 100644
+index beba7ef..708242e 100644
 --- a/lib/SConscript
 +++ b/lib/SConscript
-@@ -40,7 +40,9 @@ def build_config_template(target, source, env):
+@@ -43,7 +43,9 @@ def build_config_template(target, source, env):
              VERSION_MINOR=VERSION_MINOR,
              VERSION_PATCH=VERSION_PATCH,
              VERSION_NAME=VERSION_NAME,
@@ -69,10 +69,10 @@ index 8412b40..ffa6252 100644
  
          handle.write(config_h)
 diff --git a/lib/cmdline.c b/lib/cmdline.c
-index 2e43c3e..eac83a6 100644
+index 2998da5..7fbfa08 100644
 --- a/lib/cmdline.c
 +++ b/lib/cmdline.c
-@@ -57,7 +57,7 @@
+@@ -62,7 +62,7 @@ static const int RM_PARANOIA_MAX = 5;
  
  static void rm_cmd_show_version(void) {
      fprintf(stderr, "version %s compiled: %s at [%s] \"%s\" (rev %s)\n", RM_VERSION,
@@ -82,10 +82,10 @@ index 2e43c3e..eac83a6 100644
      /* Make a list of all supported features from the macros in config.h */
      /* clang-format off */
 diff --git a/lib/config.h.in b/lib/config.h.in
-index 7c6aafa..c7934c2 100644
+index c9f3bfd..9f381d9 100644
 --- a/lib/config.h.in
 +++ b/lib/config.h.in
-@@ -29,6 +29,8 @@
+@@ -34,6 +34,8 @@
  #define RM_VERSION_PATCH {VERSION_PATCH}
  #define RM_VERSION_NAME  "{VERSION_NAME}"
  #define RM_VERSION_GIT_REVISION "{VERSION_GIT_REVISION}"

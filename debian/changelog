@@ -1,6 +1,9 @@
 rmlint (2.8.0-1) UNRELEASED; urgency=medium
 
   * New upstream release [2.8.0].
+  * debian/patches/*:
+    - Rebase patches.
+    - Drop manpage-typos.patch already applied upstream.
   * Add dependency on packaged version of Vollkorn desktop font,
     so that its use in HTML docs may be restored.  Thanks to
     Adam Borowski for suggestion.

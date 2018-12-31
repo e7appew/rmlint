@@ -14,7 +14,7 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/tests/test_formatters/test_sh.py b/tests/test_formatters/test_sh.py
-index 04f1e14..f7acfd2 100644
+index 65d4d5d..0579f42 100644
 --- a/tests/test_formatters/test_sh.py
 +++ b/tests/test_formatters/test_sh.py
 @@ -5,7 +5,10 @@ from tests.utils import *
