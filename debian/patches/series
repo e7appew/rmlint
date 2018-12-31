@@ -3,3 +3,4 @@ privacy-breach-workaround.patch
 parameterized-workaround.patch
 disable-asciinema-demo.patch
 disable-web-fonts.patch
+doco-typos.patch
