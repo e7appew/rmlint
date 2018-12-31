@@ -13,6 +13,7 @@ rmlint (2.8.0-1) UNRELEASED; urgency=medium
     - Remove unnecessary Testsuite field.
     - Set "Rules-Requires-Root: no".
     - Indicate compliance with Debian Policy 4.3.0.
+    - Update build dependencies.
   * Update lintian override to debian-watch-does-not-check-gpg-signature.
   * Add machine-readable upstream metadata.
   * debian/rules:
