@@ -1,0 +1,27 @@
+From: Carlos Maddela <e7appew@gmail.com>
+Date: Fri, 4 Jan 2019 08:49:01 +1100
+Subject: Stop scons from stripping binaries
+
+Description: Stop scons from stripping binaries
+ so that it may be delegated to debhelper.
+Author: Carlos Maddela <e7appew@gmail.com>
+Forwarded: not-needed
+Last-Update: 2019-01-04
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+---
+ SConstruct | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/SConstruct b/SConstruct
+index 082a679..7370585 100755
+--- a/SConstruct
++++ b/SConstruct
+@@ -726,7 +726,6 @@ if ARGUMENTS.get('DEBUG') == "1":
+     O_value = ARGUMENTS.get('O', O_DEBUG)
+ else:
+     conf.env.Append(CCFLAGS=['-DG_DISABLE_ASSERT', '-DNDEBUG'])
+-    conf.env.Append(LINKFLAGS=['-s'])
+     O_value = ARGUMENTS.get('O', O_RELEASE)
+ 
+ if O_value == 'debug':

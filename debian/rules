@@ -23,7 +23,8 @@ COMMON_SCONS_OPTS := \
 	--prefix=$(DEB_BUILD_ROOT)/usr --actual-prefix=/usr --without-gui \
 	$(if $(NUM_JOBS),-j$(NUM_JOBS)) \
 	$(if $(filter $(DH_VERBOSE),1),VERBOSE=1) \
-	$(if $(findstring debug,$(DBO)),DEBUG=1)
+	$(if $(findstring debug,$(DBO)),DEBUG=1) \
+	SYMBOLS=1
 
 # Fudge build date using SOURCE_DATE_EPOCH for build reproducibility.
 include /usr/share/dpkg/pkg-info.mk
