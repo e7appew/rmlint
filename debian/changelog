@@ -5,6 +5,9 @@ rmlint (2.8.0-2) UNRELEASED; urgency=medium
   * Allow debhelper to handle stripping of binaries.
   * Build with Debhelper compat level 12.
   * Remove unnecessary build dependencies for nocheck build profile.
+  * Fix builds for hurd, kfreebsd and sparc64 by relaxing build dependency
+    on python3-psutil for those architectures. It currently doesn't support
+    those architectures and is only required for running tests anyway.
 
  -- Carlos Maddela <e7appew@gmail.com>  Tue, 01 Jan 2019 02:04:05 +1100
 
