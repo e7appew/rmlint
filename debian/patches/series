@@ -5,3 +5,4 @@ disable-web-fonts.patch
 doco-typos.patch
 no-strip.patch
 fix-nosetests-search.patch
+no-sse4.patch
