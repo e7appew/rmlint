@@ -4,3 +4,4 @@ disable-asciinema-demo.patch
 disable-web-fonts.patch
 doco-typos.patch
 no-strip.patch
+fix-nosetests-search.patch

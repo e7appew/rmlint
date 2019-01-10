@@ -1,0 +1,49 @@
+From: Carlos Maddela <e7appew@gmail.com>
+Date: Wed, 9 Jan 2019 05:05:11 +1100
+Subject: Fix nosetests search.
+
+Description: Fix nosetests search.
+ Avoid confusing error message about nosetests not being found when
+ there is a test failure.
+Author: Carlos Maddela <e7appew@gmail.com>
+Forwarded: https://github.com/sahib/rmlint/pull/331
+Last-Update: 2019-01-10
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+---
+ tests/SConscript | 17 +++++++++++++----
+ 1 file changed, 13 insertions(+), 4 deletions(-)
+
+diff --git a/tests/SConscript b/tests/SConscript
+index 2d0dcb6..9f421d6 100644
+--- a/tests/SConscript
++++ b/tests/SConscript
+@@ -5,15 +5,24 @@ Import('env')
+ Import('programs')
+ 
+ 
++import os
+ import subprocess
+ 
+ 
++def cmd_exists(cmd):
++    return any(
++        os.access(os.path.join(path, cmd), os.X_OK)
++        for path in os.environ["PATH"].split(os.pathsep)
++    )
++
++
+ def run_tests(target=None, source=None, env=None):
+     names = ['nosetests-3.3', 'nosetests-3', 'python3-nosetests', 'nosetests3', 'nosetests']
+-    for name in names:
+-        print('Found nosetests as ,,{}"'.format(name))
+-        if not subprocess.call(name + ' -s -v -a !slow', shell=True):
+-            Exit(0)
++    exes = [exe for exe in names if cmd_exists(exe)]
++    if any(exes):
++        name = exes[0]
++        print('Found nosetests as "{}"'.format(name))
++        Exit(subprocess.call(name + ' -s -v -a !slow', shell=True))
+ 
+     print('Unable to find nosetests, tried these: ' + str(names))
+     Exit(-1)
